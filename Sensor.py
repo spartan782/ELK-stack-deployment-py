@@ -54,17 +54,52 @@ def get_args():
 	parser.add_argument('--elasticsearch-data-node', action='store_true', help='Makes this elasticsearch node a data node', required=False, default=True)
 	# need to further research kafka for best defaults for my usecase	
 	parser.add_argument('--install-kafka', action='store_true', help='Installs kafka and java', required=False, default=False)
-	parser.add_argument('--kafka-topic', metavar='TOPIC', type=str, help='Topic ID kafka should use and cluster with', required=False, default=None)
+	parser.add_argument('--kafka-topic', metavar='TOPIC(s)',nargs='+', type=list, help='Topic ID(s) kafka should use and cluster with', required=False, default=["bro_raw", "suricata_raw"])
 	parser.add_argument('--install-logstash', action='store_true', help='Installs logstash and elasticsearch', required=False, default=False)
 	#will be replaced once I have a bro to kafka writer
 	parser.add_argument('--logstash-bro-kafka', metavar='TOPIC' type=str, help='This will setup logstash to move bro logs into a kafka TOPIC ', required=False, default=None)
 	parser.add_argument('--logstash-suricata-kafka', metavar='TOPIC' type=str, help='This will setup logstash to move the eve.json file into a kafka TOPIC', required=False, default=None)
 	parser.add_argument('--logstash-bro-es', action='store_true', help='This will setup logstash to move bro logs into a local elasticsearch node', required=False, default=True)
-	parser.add_argument('--logstash-bro-es', action='store_true', help='This will setup logstash to move the eve.json file into a local elasticsearch node ', required=False, default=True)
+	parser.add_argument('--logstash-suricata-es', action='store_true', help='This will setup logstash to move the eve.json file into a local elasticsearch node ', required=False, default=True)
 	parser.add_argument('--install-kibana', action='store_true', help='Installs Kibana and an elasticsearch search node', required=False, default=False)
-	
-	parser.add_argument('--repo-satellite', action='store_true', help='Create a repo satellite, installs nginx', required=False, default=False)
+	parser.add_argument('--kibana-nginx', metavar='PORT', type=int, help='Port used with the nginx proxy for kibana. (This installs nginx)', required=False, default=8080)
 	args = parser.parse_args()
-	return args
-	#parser.add_argument('')
-stuff = get_args()
+	return args.host, args.interface, args.domain, args.install_bro, args.bro_cores, args.bro_logs, args.install_suricata, args.suricata_data, args.suricata_kafka, args.install_netsniff, args.netsniff_interval, args.netsniff_output, args.install_elasticsearch, args.elasticsearch_node_name, args.elasticsearch_cluster_name, args.elasticsearch_heap, args.elasticsearch_replica, args.elasticsearch_path_data, args.elasticsearch_path_logs, args.elasticsearch_path_plugins, args.elasticsearch_path_work, args.elasticsearch_unicast, args.elasticsearch_master_discovery, args.elasticsearch_master_node, args.elasticsearch_data_node, args.install_kafka, args.kafka_topic, args.install_logstash, args.logstash_bro_kafka, args.logstash_suricata_kafka, args.logstash_bro_es, args.logstash_suricata_es, args.install_kibana, args.kibana_nginx
+
+host, interface, domain, install_bro, bro_cores, bro_logs, install_suricata, suricata_data, suricata_kafka, install_netsniff, netsniff_interval, netsniff_output, install_es, es_node_name, es_cluster_name, es_heap, es_shards, es_replica, es_path_data, es_path_logs, es_path_plugins, es_path_work, es_unicast, es_master_discovery, es_master_node, es_data_node, install_kafka, kafka_topic, install_logstash, logstash_bro_kafka, logstash_suricata_kafka, logstash_bro_es, logstash_suricata_es, install_kibana, kibana_nginx = get_args()
+
+print "HOST: "+host
+print "INTERFACE: "+interface
+print "DOMAIN: "+domain
+print "INSTALL BRO: "+install_bro
+print "BRO CORES: "+bro_cores
+print "BRO LOGS: "+bro_logs
+print "INSTALL SURICATA: "+install_suricata
+print "SURICATA DATA: "+suricata_data
+print "SURICATA KAFKA: "+suricata_kafka
+print "INSTALL NETSNIFF-NG: "+install_netsniff
+print "NETSNIFF-NG INTERVAL: "+netsniff_interval
+print "NETSNIFF-NG OUTPUT: "+netsniff_output
+print "INSTALL ES: "+install_es
+print "ES NODE NAME: "+es_node_name
+print "ES CLUSTER NAME: "+es_cluster_name
+print "ES HEAP: "+es_heap
+print "ES SHARDS: "+es_shards
+print "ES REPLICA: "+es_replica
+print "ES PATH DATA: "+es_path_data
+print "ES PATH LOGS: "+es_path_logs
+print "ES PATH PLUGINS: "+es_path_plugins
+print "ES PATH WORK: "+es_path_work
+print "ES UNICAST: "+es_unicast
+print "ES MASTER DISCOVERY: "+es_master_discovery
+print "ES MASTER NODE: "+es_master_node
+print "ES DATA NODE: "+es_data_node
+print "INSTALL KAFKA: "+install_kafka
+print "KAFKA TOPIC: "+kafka_topic
+print "INSTALL LOGSTASH: "+install_logstash
+print "LOGSTASH BRO KAFKA: "+logstash_bro_kafka
+print "LOGSTASH SURICATA KAFKA: "+logstash_suricata_kafka
+print "LOGSTASH BRO ES: "+logstash_bro_es
+print "LOGSTASH SURICATA ES: "+logstash_suricata_es
+print "INSTALL KIBANA: "+install_kibana
+print "KIBANA NGINX: "+kibana_nginx
