@@ -11,6 +11,8 @@ ELK
 
 #Future plans
 
-	Create a plugin that writes bro logs to a kafka topic instead of disk.
-	Create a plugin that writes suricata eve.json to a kafka topic instead of disk.
-	Create a script/software that can mimic the ability present in sec onion that lets you pivot to pcap files from kibana.
+Create a plugin that writes bro logs to a kafka topic instead of disk.
+
+Create a plugin that writes suricata eve.json to a kafka topic instead of disk.
+
+Create a script/software that can mimic the ability present in sec onion that lets you pivot to pcap files from kibana.
