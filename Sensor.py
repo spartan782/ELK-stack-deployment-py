@@ -204,10 +204,22 @@ def install_software():
 def configure(soft):
 	#configure installed software
 	if(soft == 'bro'):
+		#make bro write json files
+		#configure node.cfg
+		#configure broctl.cfg
+		#make broctl start on boot
+		#mkdir for logs
 		pass
 	if(soft == 'suricata'):
+		#enable eve.json
+		#make load rules script
+		#make suricata start on boot
+		#mkdir for eve.json
 		pass
 	if(soft == 'netsniff-ng'):
+		#write configuration file
+		#make netsniff-ng service file
+		#mkdir for pcap storage
 		pass
 	if(soft == 'logstash'):
 		pass
@@ -241,8 +253,9 @@ def user_request():
 	if(install_bro or install_suricata or install_netsniff or install_elasticsearch or install_kafka or install_logstash):
 		install_software()
 	else:
+		import sys
 		print "Dynamic decision failer.\n\nCould not determine what to install.\nIf you want a default installation of a specific software please use the --install_[software] options or provide a value other than the default for selected options. The follower are default values used:\n"
-			
+		sys.exit(0)	
 
 smarts()
 # print "HOST: ",host
