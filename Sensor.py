@@ -19,9 +19,9 @@ def get_args():
 												 epilog="""When installing Logstash the script will default to installing ES as a Master/Data node.
 												 This is because the ultimate goal is to get data into elasticsearch.
 												 You can use #######.py to modify exsisting software""")
-	
-	parser.add_argument('-H', '--host',type=str, help='Host Name', required=True)
-	parser.add_argument('-I', '--interface', metavar='INTERFACE',type=str, help='Capture Interface', required=True)
+	required = parser.add_argument_group('required arguments')
+	required.add_argument('-H', '--host',type=str, help='Host Name', required=True)
+	required.add_argument('-I', '--interface', metavar='INTERFACE',type=str, help='Capture Interface', required=True)
 	parser.add_argument('-d', '--domain',type=str,help='Domain name', required=False, default=None)
 	parser.add_argument('--install-bro',  action='store_true', help='Installs bro, brocontrol, pfring, java, dkms, libpcap-pfring and pfring-dkms', required=False, default=False)
 	#would like to set default to a % of available CPU power instead of hard coded number
@@ -103,3 +103,6 @@ print "LOGSTASH BRO ES: "+logstash_bro_es
 print "LOGSTASH SURICATA ES: "+logstash_suricata_es
 print "INSTALL KIBANA: "+install_kibana
 print "KIBANA NGINX: "+kibana_nginx
+
+
+ 
