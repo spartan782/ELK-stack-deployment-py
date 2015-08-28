@@ -1,41 +1,41 @@
 import argparse
-
-domain_default = ""
-bro_cores_default = 1
-bro_logs_default = '/data/bro/logs'
-bro_manager_default = 'localhost'
-bro_proxy_default = 'localhost'
-suricata_data_default = '/data/suricata/logs'
-netsniff_interval_default = '1GiB'
-netsniff_output_default = '/data/pcap'
-es_node_name_default = ''
-es_cluster_name_default = 'elasticsearch'
-es_heap_default = 1
-es_shards_default = 1
-es_replica_default = 0
-es_path_data_default = '/data/elasticsearch/data'
-es_path_logs_default = '/data/elasticsearch/logs'
-es_path_plugins_default = ''
-es_path_work_default = '/data/elasticsearch/work'
-es_master_discovery_default = ''
-kafka_topic_default = ['bro_raw','suricata_raw']
-logstash_bro_kafka_default = 'bro_raw'
-logstash_suricata_kafka_default = 'suricata_raw'
-logstash_bro_es_default = True
-logstash_suricata_es_default = True
-logstash_broker_es_default = []
-kibana_nginx_default = 8080
-install_bro_default = False
-install_suricata_default = False
-suricata_kafka_default = False
-install_netsniff_default = False
-install_elasticsearch_default = False
-es_unicast_default = False
-es_master_node_default = True
-es_data_node_default = True
-install_kafka_default = False
-install_logstash_default = False
-install_kibana_default = False
+defaults = {}
+defaults['domain'] = ""
+defaults['bro_cores'] = 1
+defaults['bro_logs'] = '/data/bro/logs'
+defaults['bro_manager'] = 'localhost'
+defaults['bro_proxy'] = 'localhost'
+defaults['suricata_data'] = '/data/suricata/logs'
+defaults['netsniff_interval'] = '1GiB'
+defaults['netsniff_output'] = '/data/pcap'
+defaults['elasticsearch_node_name'] = ''
+defaults['elasticsearch_cluster_name'] = 'elasticsearch'
+defaults['elasticsearch_heap'] = 1
+defaults['elasticsearch_shards'] = 1
+defaults['elasticsearch_replica'] = 0
+defaults['elasticsearch_path_data'] = '/data/elasticsearch/data'
+defaults['elasticsearch_path_logs'] = '/data/elasticsearch/logs'
+defaults['elasticsearch_path_plugins'] = ''
+defaults['elasticsearch_path_work'] = '/data/elasticsearch/work'
+defaults['elasticsearch_master_discovery'] = ''
+defaults['kafka_topic'] = ['bro_raw','suricata_raw']
+defaults['logstash_bro_kafka'] = 'bro_raw'
+defaults['logstash_suricata_kafka'] = 'suricata_raw'
+defaults['logstash_bro_es'] = True
+defaults['logstash_suricata_es'] = True
+defaults['logstash_broker_es'] = []
+defaults['kibana_nginx'] = 8080
+defaults['install_bro'] = False
+defaults['install_suricata'] = False
+defaults['suricata_kafka'] = False
+defaults['install_netsniff'] = False
+defaults['install_elasticsearch'] = False
+defaults['elasticsearch_unicast'] = False
+defaults['elasticsearch_master_node'] = True
+defaults['elasticsearch_data_node'] = True
+defaults['install_kafka'] = False
+defaults['install_logstash'] = False
+defaults['install_kibana'] = False
 
 def get_args():
 
@@ -69,51 +69,51 @@ def get_args():
 
 	required_parser.add_argument('-H', '--host',type=str, help='Host Name', required=True)
 	required_parser.add_argument('-I', '--interface', metavar='INTERFACE',type=str, help='Capture Interface', required=True)
-	parser.add_argument('-d', '--domain',type=str,help='Domain name', required=False, default=domain_default)
+	parser.add_argument('-d', '--domain',type=str,help='Domain name', required=False, default=defaults['domain'])
 	
 
-	install_parser.add_argument('--install-bro',  action='store_true', help='Installs bro, brocontrol, pfring, java, dkms, libpcap-pfring and pfring-dkms', required=False, default=install_bro_default)
+	install_parser.add_argument('--install-bro',  action='store_true', help='Installs bro, brocontrol, pfring, java, dkms, libpcap-pfring and pfring-dkms', required=False, default=defaults['install_bro'])
 	#would like to set default to a % of available CPU power instead of hard coded number
-	bro_parser.add_argument('--bro-cores', metavar='NUM', type=int, help='Number of cores for bro workers', required=False, default=bro_cores_default)
-	bro_parser.add_argument('--bro-logs', metavar='DIR', type=str, help='Directory where bro should save logs', required=False, default=bro_logs_default)
-	bro_parser.add_argument('--bro_manager', metavar='HOST', type=str, help='Host that is/will be the manager for a bro cluster', required=False, default=bro_manager_default)
-	bro_parser.add_argument('--bro_proxy', metava='HOST', type=str, help='Host that is/will be the proxy for a bro cluster', required=False, default=bro_proxy_default)
-	install_parser.add_argument('--install-suricata', action='store_true', help='Installs Suricata, dkms, pfring, libpcap-pfring and pfring-dkms', required=False, default=install_suricata_default)
-	suricata_parser.add_argument('--suricata-data', metavar='DIR', help='Directory to store the eve.json', required=False, default=suricata_data_default)
+	bro_parser.add_argument('--bro-cores', metavar='NUM', type=int, help='Number of cores for bro workers', required=False, default=defaults['bro_cores'])
+	bro_parser.add_argument('--bro-logs', metavar='DIR', type=str, help='Directory where bro should save logs', required=False, default=defaults['bro_logs'])
+	bro_parser.add_argument('--bro_manager', metavar='HOST', type=str, help='Host that is/will be the manager for a bro cluster', required=False, default=defaults['bro_manager'])
+	bro_parser.add_argument('--bro_proxy', metava='HOST', type=str, help='Host that is/will be the proxy for a bro cluster', required=False, default=defaults['bro_proxy'])
+	install_parser.add_argument('--install-suricata', action='store_true', help='Installs Suricata, dkms, pfring, libpcap-pfring and pfring-dkms', required=False, default=defaults['install_suricata'])
+	suricata_parser.add_argument('--suricata-data', metavar='DIR', help='Directory to store the eve.json', required=False, default=defaults['suricata_data'])
 	#parser option not yet implemented. Should have default value of True after implementation.
-	suricata_parser.add_argument('--suricata-kafka', action='store_true', help='(Not Implemented)Will no longer write a eve.json and will push data directly into kafka', required=False, default=suricata_kafka_default)
-	install_parser.add_argument('--install-netsniff', action='store_true', help='Installs netsniff-ng', required=False, default=install_netsniff_default)
-	netsniff_parser.add_argument('--netsniff-interval', metavar='<num>KiB/MiB/GiB/s/sec/min/hrs', type=netsniff_interval, help='Interval for output pcap', required=False, default=netsniff_interval_default)
-	netsniff_parser.add_argument('--netsniff-output', metavar='DIR/INTERFACE', type=str, help='Directory/Interface where netsniff-ng should send data', required=False, default=netsniff_output_default)
-	install_parser.add_argument('--install-elasticsearch', action='store_true', help='Installs elasticsearch and java', required=False, default=install_elasticsearch_default)
-	es_parser.add_argument('--elasticsearch-node-name', metavar='NAME', type=str, help='Sets current elasticsearch\'s node name', required=False, default=es_node_name_default)
-	es_parser.add_argument('--elasticsearch-cluster-name', metavar='CLUSTER', type=str, help='Sets the cluster this elasticsearch node should connect to', required=False, default=es_cluster_name_default)
+	suricata_parser.add_argument('--suricata-kafka', action='store_true', help='(Not Implemented)Will no longer write a eve.json and will push data directly into kafka', required=False, default=defaults['suricata_kafka'])
+	install_parser.add_argument('--install-netsniff', action='store_true', help='Installs netsniff-ng', required=False, default=defaults['install_netsniff'])
+	netsniff_parser.add_argument('--netsniff-interval', metavar='<num>KiB/MiB/GiB/s/sec/min/hrs', type=netsniff_interval, help='Interval for output pcap', required=False, default=defaults['netsniff_interval'])
+	netsniff_parser.add_argument('--netsniff-output', metavar='DIR/INTERFACE', type=str, help='Directory/Interface where netsniff-ng should send data', required=False, default=defaults['netsniff_output'])
+	install_parser.add_argument('--install-elasticsearch', action='store_true', help='Installs elasticsearch and java', required=False, default=defaults['install_elasticsearch'])
+	es_parser.add_argument('--elasticsearch-node-name', metavar='NAME', type=str, help='Sets current elasticsearch\'s node name', required=False, default=defaults['elasticsearch_node_name'])
+	es_parser.add_argument('--elasticsearch-cluster-name', metavar='CLUSTER', type=str, help='Sets the cluster this elasticsearch node should connect to', required=False, default=defaults['elasticsearch_cluster_name'])
 	#would like to set default to 50% or 32 depending on available RAM.
-	es_parser.add_argument('--elasticsearch-heap', metavar='NUM', type=int, help='Sets the amount of RAM elasticsearch is able to use for indexing functions. Recommend 50 percent of availble ram, but no more than 32G', required=False, default=es_heap_default)
+	es_parser.add_argument('--elasticsearch-heap', metavar='NUM', type=int, help='Sets the amount of RAM elasticsearch is able to use for indexing functions. Recommend 50 percent of availble ram, but no more than 32G', required=False, default=defaults['elasticsearch_heap'])
 	# would be nice to dynamically set this but it would probably be a hassle. 
-	es_parser.add_argument('--elasticsearch-shards', metavar='NUM', type=int, help='Sets the number of shards for elasticsearch. Recommend lower shard count for smaller configurations', required=False, default=es_shards_default)
-	es_parser.add_argument('--elasticsearch-replica', metavar='NUM', type=int, help='Sets the number of replicas for elasticsearch. Replicas are used for failover, recommend zero if you have only 1 data node', required=False, default=es_replica_default)
-	es_parser.add_argument('--elasticsearch-path-data', metavar='DIR', type=str, help='Directory to store elasticsearch data', required=False, default=es_path_data_default)
-	es_parser.add_argument('--elasticsearch-path-logs', metavar='DIR', type=str, help='Directory to store elasticsearch logs', required=False, default=es_path_logs_default)
+	es_parser.add_argument('--elasticsearch-shards', metavar='NUM', type=int, help='Sets the number of shards for elasticsearch. Recommend lower shard count for smaller configurations', required=False, default=defaults['elasticsearch_shards'])
+	es_parser.add_argument('--elasticsearch-replica', metavar='NUM', type=int, help='Sets the number of replicas for elasticsearch. Replicas are used for failover, recommend zero if you have only 1 data node', required=False, default=defaults['elasticsearch_replica'])
+	es_parser.add_argument('--elasticsearch-path-data', metavar='DIR', type=str, help='Directory to store elasticsearch data', required=False, default=defaults['elasticsearch_path_data'])
+	es_parser.add_argument('--elasticsearch-path-logs', metavar='DIR', type=str, help='Directory to store elasticsearch logs', required=False, default=defaults['elasticsearch_path_logs'])
 	# probably wont implement this. No plugins needed at this time
-	es_parser.add_argument('--elasticsearch-path-plugins', metavar='DIR', type=str, help='Directory to elasticsearch plugins', required=False, default=es_path_plugins_default)
-	es_parser.add_argument('--elasticsearch-path-work', metavar='DIR', type=str, help='Directory for elasticsearch to work out of', required=False, default=es_path_work_default)
-	es_parser.add_argument('--elasticsearch-unicast', action='store_true', help='Enables unicast and disables multicast discovery. If enabled include the --elasticsearch-master-discovery field or elasticsearch wont be able the master nodes', required=False, default=es_unicast_default)
-	es_parser.add_argument('--elasticsearch-master-discovery', metavar='"NODE', nargs='+', type=str, help='List of master nodes that can be discovered when this node starts ("192.168.1.11, 192.168.1.12, ect..")',required=False, default=es_master_discovery_default)
-	es_parser.add_argument('--elasticsearch-master-node', action='store_true', help='Makes this elasticsearch node a master node', required=False, default=es_master_node_default)
-	es_parser.add_argument('--elasticsearch-data-node', action='store_true', help='Makes this elasticsearch node a data node', required=False, default=es_data_node_default)
+	es_parser.add_argument('--elasticsearch-path-plugins', metavar='DIR', type=str, help='Directory to elasticsearch plugins', required=False, default=defaults['elasticsearch_path_plugins'])
+	es_parser.add_argument('--elasticsearch-path-work', metavar='DIR', type=str, help='Directory for elasticsearch to work out of', required=False, default=defaults['elasticsearch_path_work'])
+	es_parser.add_argument('--elasticsearch-unicast', action='store_true', help='Enables unicast and disables multicast discovery. If enabled include the --elasticsearch-master-discovery field or elasticsearch wont be able the master nodes', required=False, default=defaults['elasticsearch_unicast'])
+	es_parser.add_argument('--elasticsearch-master-discovery', metavar='"NODE', nargs='+', type=str, help='List of master nodes that can be discovered when this node starts ("192.168.1.11, 192.168.1.12, ect..")',required=False, default=defaults['elasticsearch_master_discovery'])
+	es_parser.add_argument('--elasticsearch-master-node', action='store_true', help='Makes this elasticsearch node a master node', required=False, default=defaults['elasticsearch_master_node'])
+	es_parser.add_argument('--elasticsearch-data-node', action='store_true', help='Makes this elasticsearch node a data node', required=False, default=defaults['elasticsearchdata_node'])
 	# need to further research kafka for best defaults for my usecase	
-	install_parser.add_argument('--install-kafka', action='store_true', help='Installs kafka and java', required=False, default=install_kafka_default)
-	kafka_parser.add_argument('--kafka-topic', metavar='TOPIC', nargs='+', type=list, help='Topic ID(s) kafka should use and cluster with', required=False, default=kafka_topic_default)
-	install_parser.add_argument('--install-logstash', action='store_true', help='Installs logstash and elasticsearch', required=False, default=install_logstash_default)
+	install_parser.add_argument('--install-kafka', action='store_true', help='Installs kafka and java', required=False, default=defaults['install_kafka'])
+	kafka_parser.add_argument('--kafka-topic', metavar='TOPIC', nargs='+', type=list, help='Topic ID(s) kafka should use and cluster with', required=False, default=defaults['kafka_topic'])
+	install_parser.add_argument('--install-logstash', action='store_true', help='Installs logstash and elasticsearch', required=False, default=defaults['install_logstash'])
 	#will be replaced once I have a bro to kafka writer
-	logstash_parser.add_argument('--logstash-bro-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move bro logs into a kafka TOPIC ', required=False, default=logstash_bro_kafka_default)
-	logstash_parser.add_argument('--logstash-suricata-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move the eve.json file into a kafka TOPIC', required=False, default=logstash_suricata_kafka_default)
-	logstash_parser.add_argument('--logstash-bro-es', action='store_true', help='This will setup logstash to move bro logs into a local elasticsearch node', required=False, default=logstash_bro_es_default)
-	logstash_parser.add_argument('--logstash-suricata-es', action='store_true', help='This will setup logstash to move the eve.json file into a local elasticsearch node ', required=False, default=logstash_suricata_es_default)
-	logstash_parser.add_argument('--logstash-broker-es', nargs='+', metavar='TOPIC', type=str, help='This will move topics from the kafka broker into elasticsearch', required=False, default=logstash_broker_es_default)
-	install_parser.add_argument('--install-kibana', action='store_true', help='Installs Kibana and an elasticsearch search node', required=False, default=install_kibana_default)
-	kibana_parser.add_argument('--kibana-nginx', metavar='PORT', type=int, help='Port used with the nginx proxy for kibana. (This installs nginx)', required=False, default=kibana_nginx_default)
+	logstash_parser.add_argument('--logstash-bro-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move bro logs into a kafka TOPIC ', required=False, default=defaults['logstash_bro_kafka'])
+	logstash_parser.add_argument('--logstash-suricata-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move the eve.json file into a kafka TOPIC', required=False, default=defaults['logstash_suricata_kafka'])
+	logstash_parser.add_argument('--logstash-bro-es', action='store_true', help='This will setup logstash to move bro logs into a local elasticsearch node', required=False, default=defaults['logstash_bro_es'])
+	logstash_parser.add_argument('--logstash-suricata-es', action='store_true', help='This will setup logstash to move the eve.json file into a local elasticsearch node ', required=False, default=defaults['logstash_suricata_es'])
+	logstash_parser.add_argument('--logstash-broker-es', nargs='+', metavar='TOPIC', type=str, help='This will move topics from the kafka broker into elasticsearch', required=False, default=defaults['logstash_broker_es'])
+	install_parser.add_argument('--install-kibana', action='store_true', help='Installs Kibana and an elasticsearch search node', required=False, default=defaults['install_kibana'])
+	kibana_parser.add_argument('--kibana-nginx', metavar='PORT', type=int, help='Port used with the nginx proxy for kibana. (This installs nginx)', required=False, default=defaults['kibana_nginx'])
 	
 	args = parser.parse_args()
 	
@@ -127,12 +127,124 @@ es_shards, es_replica, es_path_data, es_path_logs, es_path_plugins, es_path_work
 logstash_suricata_kafka, logstash_bro_es, logstash_suricata_es, logstash_broker_es, install_kibana, kibana_nginx = get_args()
 
 def smarts():
-	#not installing all software
-	if(install_bro or install_suricata or install_netsniff or install_es or install_kafka or install_logstash or install_kibana or bro_cores != 1 , bro_logs != '', install_suricata, suricata_data, suricata_kafka, install_netsniff, netsniff_interval, netsniff_output, install_es, es_node_name, es_cluster_name, es_heap, es_shards, es_replica, es_path_data, es_path_logs, es_path_plugins, es_path_work, es_unicast, es_master_discovery, es_master_node, es_data_node, install_kafka, kafka_topic, install_logstash, logstash_bro_kafka, logstash_suricata_kafka, logstash_bro_es, logstash_suricata_es, install_kibana, kibana_nginx):
-		if(install_bro):
-			pass
+	#This means they added more than the default options
+	if(len(sys.argv) > 3):
+		#This means they only changed the domain and still wish to have a default install
+		if(len(sys.argv == 4 and domain != domain_default):
+			default()
+		else:
+			#Custom run based off user
+			user_request()
+	#run defaults
+	else:
+		default()
+		
+def default():
+	print "Installing Default stack..."
+	install_bro = True
+	install_suricata =True
+	install_netsniff = True
+	intall_kafka = False
+	install_logstash = True
+	install_elasticsearch = True
+	install_kibana = True
+	install_software()
+
+
+def install_software():
+	import subprocess, shlex
+	#list of software that will be installed
+	redundant_software = []
+	if(install_bro):
+		subprocess.call(shlex.split('sudo yum -y install bro'))
+		subprocess.call(shlex.split('sudo yum -y install brocontrol'))
+		configure('bro')
+		if('pfring' not in redundant_software):
+			redundant_software.append('pfring')
+			subprocess.call(shlex.split('sudo yum -y install pfring'))
+			subprocess.call(shlex.split('sudo yum -y install dkms'))
+			subprocess.call(shlex.split('sudo yum -y install pfring-dkms'))
+			subprocess.call(shlex.split('sudo yum -y install libpcap'))
+			configure('pfring')
+
+	if(install_suricata):
+		subprocess.call(shlex.split('sudo yum -y install suricata'))
+		configure('suricata')
+		if('pfring' not in redundant_software):
+			redundant_software.append('pfring')
+			subprocess.call(shlex.split('sudo yum -y install pfring'))
+			subprocess.call(shlex.split('sudo yum -y install dkms'))
+			subprocess.call(shlex.split('sudo yum -y install pfring-dkms'))
+			subprocess.call(shlex.split('sudo yum -y install libpcap'))
+			configure('pfring')
+
+	if(install_netsniff):
+		subprocess.call(shlex.split('sudo yum -y install netsniff-ng'))
+		configure('netnsiff-ng')
+
+	if(install_logstash):
+		subprocess.call(shlex.split('sudo yum -y install logstash'))
+		configure('logstash')
+		if('java' not in software_to_install):
+			subprocess.call(shlex.split('sudo yum -y install java'))
+
+	if(install_elasticsearch):
+		subprocess.call(shlex.split('sudo yum -y install elasticsearch'))
+		configure('elasticsearch')
+
+	#this might get canned. This is not a RPM and most of the sensors do not have internet connections.
+	if(install_kibana):
+		pass
+		#if('kibana' not in software_to_install):
+			#software_to_install.append('kibana')
+		#if(kibana_nginx):
+			#software_to_install.append('nginx')
 		
 	
+def configure(soft):
+	#configure installed software
+	if(soft == 'bro'):
+		pass
+	if(soft == 'suricata'):
+		pass
+	if(soft == 'netsniff-ng'):
+		pass
+	if(soft == 'logstash'):
+		pass
+	if(soft == 'elasticsearch'):
+		pass
+	if(soft == 'kibana'):
+		pass
+	if(soft == 'pfring'):
+		pass
+
+def user_request():
+	if(install_bro or bro_cores != defaults['bro_cores'] or bro_logs != defaults['bro_logs'] or bro_manager != defaults['bro_manager'] or bro_proxy != defaults['bro_proxy']):
+		install_bro = True
+	#suricata_kafka should be changed to not suricata_kafka once the suricata to kafka writer plugin is figured out.
+	if(install_suricata or suricata_data != defaults['suricata_data'] or suricata_kafka):
+		install_suricata = True
+	if(install_netsniff or netsniff_output != defaults['netsniff_output'] or netsniff_interval != defaults['netsniff_interval']):
+		install_netsniff = True
+	if(install_elasticsearch or elasticsearch_node_name != defaults['elasticsearch_node_name'] or elasticsearch_cluster_name != defaults['elasticsearch_cluster_name'] or elasticsearch_heap != defaults['elasticsearch_heap'] or elasticsearch_shards != defaults['elasticsearch_shards'] or elasticsearch_replica != defaults['elasticsearch_replica'] or elasticsearch_path_data != defaults['elasticsearch_path_data'] or elasticsearch_path_logs != defaults['elasticsearch_path_logs'] or elasticsearch_path_plugins != defaults['elasticsearch_path_logs'] or elasticsearch_path_work != defaults['elasticsearch_path_work'] or elasticsearch_unicast or elasticsearch_master_discovery != defaults['elasticsearch_master_discovery'] or not es_master_node or not es_data_node):
+		install_elasticsearch = True
+	if(install_kafka or kafka_topic != defaults['kafka_topic']):
+		install_kafka = True
+#four conditions exsist for logstash. This will be checked for in the configure portion
+	#1: move bro/suricata into kafka
+	#2: move bro/suricata into es
+	#3: move from kafka to es
+	#4: Options 1 and 3 combined
+	if(install_logstash or logstash_bro_kafka != defaults['logstash_bro_kafka'] or logstash_suricata_kafka != defaults['logstash_suricata_kafka'] or not logstash_bro_es or not logstash_suricata_es or logstash_broker_es != defaults['logstash_broker_es']):
+		install_logstash = True
+	#checks for actual installation selection. It is possilble the user could use a argument and set it to default. If they did not include the --install flag it will not trigger any installation as its expecting a change from default.
+	if(install_bro or install_suricata or install_netsniff or install_elasticsearch or install_kafka or install_logstash):
+		install_software()
+	else:
+		print "Dynamic decision failer.\n\nCould not determine what to install.\nIf you want a default installation of a specific software please use the --install_[software] options or provide a value other than the default for selected options. The follower are default values used:\n"
+			
+
+smarts()
 # print "HOST: ",host
 # print "INTERFACE: ",interface
 # print "DOMAIN: ",domain
