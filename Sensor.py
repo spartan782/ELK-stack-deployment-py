@@ -2,7 +2,7 @@ import argparse
 
 domain_default = ""
 bro_cores_default = 1
-bro_logs_default = '/var/opt/bro/logs'
+bro_logs_default = '/data/bro/logs'
 bro_manager_default = 'localhost'
 bro_proxy_default = 'localhost'
 suricata_data_default = '/data/suricata/logs'
@@ -23,7 +23,7 @@ logstash_bro_kafka_default = 'bro_raw'
 logstash_suricata_kafka_default = 'suricata_raw'
 logstash_bro_es_default = True
 logstash_suricata_es_default = True
-logstash_broker_es_default = ['bro_raw', 'suricata_raw']
+logstash_broker_es_default = []
 kibana_nginx_default = 8080
 install_bro_default = False
 install_suricata_default = False
