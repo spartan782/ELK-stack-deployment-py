@@ -3,6 +3,8 @@ import argparse
 domain_default = ""
 bro_cores_default = 1
 bro_logs_default = '/var/opt/bro/logs'
+bro_manager_default = 'localhost'
+bro_proxy_default = 'localhost'
 suricata_data_default = '/data/suricata/logs'
 netsniff_interval_default = '1GiB'
 netsniff_output_default = '/data/pcap'
@@ -74,12 +76,13 @@ def get_args():
 	#would like to set default to a % of available CPU power instead of hard coded number
 	bro_parser.add_argument('--bro-cores', metavar='NUM', type=int, help='Number of cores for bro workers', required=False, default=bro_cores_default)
 	bro_parser.add_argument('--bro-logs', metavar='DIR', type=str, help='Directory where bro should save logs', required=False, default=bro_logs_default)
+	bro_parser.add_argument('--bro_manager', metavar='HOST', type=str, help='Host that is/will be the manager for a bro cluster', required=False, default=bro_manager_default)
+	bro_parser.add_argument('--bro_proxy', metava='HOST', type=str, help='Host that is/will be the proxy for a bro cluster', required=False, default=bro_proxy_default)
 	install_parser.add_argument('--install-suricata', action='store_true', help='Installs Suricata, dkms, pfring, libpcap-pfring and pfring-dkms', required=False, default=install_suricata_default)
 	suricata_parser.add_argument('--suricata-data', metavar='DIR', help='Directory to store the eve.json', required=False, default=suricata_data_default)
 	#parser option not yet implemented. Should have default value of True after implementation.
 	suricata_parser.add_argument('--suricata-kafka', action='store_true', help='(Not Implemented)Will no longer write a eve.json and will push data directly into kafka', required=False, default=suricata_kafka_default)
 	install_parser.add_argument('--install-netsniff', action='store_true', help='Installs netsniff-ng', required=False, default=install_netsniff_default)
-	#this works but heaven forbid someone types something wrong. They will think they caused a buffer overflow.
 	netsniff_parser.add_argument('--netsniff-interval', metavar='<num>KiB/MiB/GiB/s/sec/min/hrs', type=netsniff_interval, help='Interval for output pcap', required=False, default=netsniff_interval_default)
 	netsniff_parser.add_argument('--netsniff-output', metavar='DIR/INTERFACE', type=str, help='Directory/Interface where netsniff-ng should send data', required=False, default=netsniff_output_default)
 	install_parser.add_argument('--install-elasticsearch', action='store_true', help='Installs elasticsearch and java', required=False, default=install_elasticsearch_default)
