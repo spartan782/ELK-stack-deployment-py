@@ -5,15 +5,17 @@ I am sure there are many better ways to do this. However I do not have enough ti
 
 This sensor platform will be based around the following software and currently designed for the RHEL enviroment. I am aware there are other solutions out there but have not seen anything that screams that it is better for my use case.
 #Software used
-pf_ring
+pf_ring (for suricata and bro)
 
-Suricata
+netsniff-ng (for full pcap)
 
-Bro
+Suricata (for rule based alerts)
 
-ELK
+Bro (analyzer)
 
-Kafka
+ELK (storage and user interface in real time)
+
+Kafka (message que for ELK)
 
 #Future plans
 
