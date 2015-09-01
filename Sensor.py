@@ -1,4 +1,4 @@
-import argparse
+import argparse, subprocess, shlex, sys
 defaults = {}
 defaults['domain'] = ""
 defaults['bro_cores'] = 1
@@ -18,24 +18,25 @@ defaults['elasticsearch_path_logs'] = '/data/elasticsearch/logs'
 defaults['elasticsearch_path_plugins'] = ''
 defaults['elasticsearch_path_work'] = '/data/elasticsearch/work'
 defaults['elasticsearch_master_discovery'] = ''
-defaults['kafka_topic'] = ['bro_raw','suricata_raw']
-defaults['logstash_bro_kafka'] = 'bro_raw'
-defaults['logstash_suricata_kafka'] = 'suricata_raw'
-defaults['logstash_bro_es'] = True
-defaults['logstash_suricata_es'] = True
-defaults['logstash_broker_es'] = []
+defaults['kafka_topics'] = ['bro_raw','suricata_raw']
 defaults['kibana_nginx'] = 8080
 defaults['install_bro'] = False
 defaults['install_suricata'] = False
 defaults['suricata_kafka'] = False
 defaults['install_netsniff'] = False
 defaults['install_elasticsearch'] = False
-defaults['elasticsearch_unicast'] = False
+#reduntent default should just enable this when master discovery is set
+#defaults['elasticsearch_unicast'] = False
 defaults['elasticsearch_master_node'] = True
 defaults['elasticsearch_data_node'] = True
 defaults['install_kafka'] = False
 defaults['install_logstash'] = False
 defaults['install_kibana'] = False
+logstash-bro-es = True
+logstash-suricata-es = True
+logstash-bro-kafka = []
+logstash-suricata-es = []
+logstash-kafka-es = []
 
 def get_args():
 
@@ -98,33 +99,35 @@ def get_args():
 	# probably wont implement this. No plugins needed at this time
 	es_parser.add_argument('--elasticsearch-path-plugins', metavar='DIR', type=str, help='Directory to elasticsearch plugins', required=False, default=defaults['elasticsearch_path_plugins'])
 	es_parser.add_argument('--elasticsearch-path-work', metavar='DIR', type=str, help='Directory for elasticsearch to work out of', required=False, default=defaults['elasticsearch_path_work'])
-	es_parser.add_argument('--elasticsearch-unicast', action='store_true', help='Enables unicast and disables multicast discovery. If enabled include the --elasticsearch-master-discovery field or elasticsearch wont be able the master nodes', required=False, default=defaults['elasticsearch_unicast'])
+	#Redundent default. Unicast is set when master discovery is set.
+	#es_parser.add_argument('--elasticsearch-unicast', action='store_true', help='Enables unicast and disables multicast discovery. If enabled include the --elasticsearch-master-discovery field or elasticsearch wont be able the master nodes', required=False, default=defaults['elasticsearch_unicast'])
 	es_parser.add_argument('--elasticsearch-master-discovery', metavar='"NODE', nargs='+', type=str, help='List of master nodes that can be discovered when this node starts ("192.168.1.11, 192.168.1.12, ect..")',required=False, default=defaults['elasticsearch_master_discovery'])
 	es_parser.add_argument('--elasticsearch-master-node', action='store_true', help='Makes this elasticsearch node a master node', required=False, default=defaults['elasticsearch_master_node'])
 	es_parser.add_argument('--elasticsearch-data-node', action='store_true', help='Makes this elasticsearch node a data node', required=False, default=defaults['elasticsearchdata_node'])
 	# need to further research kafka for best defaults for my usecase	
 	install_parser.add_argument('--install-kafka', action='store_true', help='Installs kafka and java', required=False, default=defaults['install_kafka'])
-	kafka_parser.add_argument('--kafka-topic', metavar='TOPIC', nargs='+', type=list, help='Topic ID(s) kafka should use and cluster with', required=False, default=defaults['kafka_topic'])
-	install_parser.add_argument('--install-logstash', action='store_true', help='Installs logstash and elasticsearch', required=False, default=defaults['install_logstash'])
-	#will be replaced once I have a bro to kafka writer
-	logstash_parser.add_argument('--logstash-bro-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move bro logs into a kafka TOPIC ', required=False, default=defaults['logstash_bro_kafka'])
-	logstash_parser.add_argument('--logstash-suricata-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move the eve.json file into a kafka TOPIC', required=False, default=defaults['logstash_suricata_kafka'])
-	logstash_parser.add_argument('--logstash-bro-es', action='store_true', help='This will setup logstash to move bro logs into a local elasticsearch node', required=False, default=defaults['logstash_bro_es'])
-	logstash_parser.add_argument('--logstash-suricata-es', action='store_true', help='This will setup logstash to move the eve.json file into a local elasticsearch node ', required=False, default=defaults['logstash_suricata_es'])
-	logstash_parser.add_argument('--logstash-broker-es', nargs='+', metavar='TOPIC', type=str, help='This will move topics from the kafka broker into elasticsearch', required=False, default=defaults['logstash_broker_es'])
-	install_parser.add_argument('--install-kibana', action='store_true', help='Installs Kibana and an elasticsearch search node', required=False, default=defaults['install_kibana'])
+	kafka_parser.add_argument('--kafka-topics', metavar='TOPIC(s)', nargs='+', type=list, help='Topic ID(s) kafka should use and cluster with', required=False, default=defaults['kafka_topics'])
+	#install_parser.add_argument('--install-logstash', action='store_true', help='Installs logstash and elasticsearch', required=False, default=defaults['install_logstash'])
+	#Script will detect when and how logstash is installed
+	#logstash_parser.add_argument('--logstash-bro-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move bro logs into a kafka TOPIC ', required=False, default=defaults['logstash_bro_kafka'])
+	#logstash_parser.add_argument('--logstash-suricata-kafka', metavar='TOPIC', type=str, help='This will setup logstash to move the eve.json file into a kafka TOPIC', required=False, default=defaults['logstash_suricata_kafka'])
+	#logstash_parser.add_argument('--logstash-bro-es', action='store_true', help='This will setup logstash to move bro logs into a local elasticsearch node', required=False, default=defaults['logstash_bro_es'])
+	#logstash_parser.add_argument('--logstash-suricata-es', action='store_true', help='This will setup logstash to move the eve.json file into a local elasticsearch node ', required=False, default=defaults['logstash_suricata_es'])
+	#logstash_parser.add_argument('--logstash-broker-es', nargs='+', metavar='TOPIC', type=str, help='This will move topics from the kafka broker into elasticsearch', required=False, default=defaults['logstash_broker_es'])
+	#install_parser.add_argument('--install-kibana', action='store_true', help='Installs Kibana and an elasticsearch search node', required=False, default=defaults['install_kibana'])
 	kibana_parser.add_argument('--kibana-nginx', metavar='PORT', type=int, help='Port used with the nginx proxy for kibana. (This installs nginx)', required=False, default=defaults['kibana_nginx'])
 	
 	args = parser.parse_args()
 	
+	# args.elasticsearch_unicast removed from return statement
 	return args.host, args.interface, args.domain, args.install_bro, args.bro_cores, args.bro_logs, args.install_suricata, args.suricata_data, args.suricata_kafka, args.install_netsniff, args.netsniff_interval, \
 	args.netsniff_output, args.install_elasticsearch, args.elasticsearch_node_name, args.elasticsearch_cluster_name, args.elasticsearch_heap, args.elasticsearch_shards, args.elasticsearch_replica, args.elasticsearch_path_data,\
-	args.elasticsearch_path_logs, args.elasticsearch_path_plugins, args.elasticsearch_path_work, args.elasticsearch_unicast, args.elasticsearch_master_discovery, args.elasticsearch_master_node, args.elasticsearch_data_node,\
-	args.install_kafka, args.kafka_topic, args.install_logstash, args.logstash_bro_kafka, args.logstash_suricata_kafka, args.logstash_bro_es, args.logstash_suricata_es,args.logstash_broker_es, args.install_kibana, args.kibana_nginx
+	args.elasticsearch_path_logs, args.elasticsearch_path_plugins, args.elasticsearch_path_work, args.elasticsearch_master_discovery, args.elasticsearch_master_node, args.elasticsearch_data_node,\
+	args.install_kafka, args.kafka_topics, args.kibana_nginx
 
+# es_unicast removed from get statement
 host, interface, domain, install_bro, bro_cores, bro_logs, install_suricata, suricata_data, suricata_kafka, install_netsniff, netsniff_interval, netsniff_output, install_es, es_node_name, es_cluster_name, es_heap,\
-es_shards, es_replica, es_path_data, es_path_logs, es_path_plugins, es_path_work, es_unicast, es_master_discovery, es_master_node, es_data_node, install_kafka, kafka_topic, install_logstash, logstash_bro_kafka,\
-logstash_suricata_kafka, logstash_bro_es, logstash_suricata_es, logstash_broker_es, install_kibana, kibana_nginx = get_args()
+es_shards, es_replica, es_path_data, es_path_logs, es_path_plugins, es_path_work, es_master_discovery, es_master_node, es_data_node, install_kafka, kafka_topics, kibana_nginx = get_args()
 
 def smarts():
 	#This means they added more than the default options
@@ -152,7 +155,6 @@ def default():
 
 
 def install_software():
-	import subprocess, shlex
 	#list of software that will be installed
 	redundant_software = []
 	if(install_bro):
@@ -194,40 +196,81 @@ def install_software():
 
 	#this might get canned. This is not a RPM and most of the sensors do not have internet connections.
 	if(install_kibana):
-		pass
-		#if('kibana' not in software_to_install):
-			#software_to_install.append('kibana')
-		#if(kibana_nginx):
-			#software_to_install.append('nginx')
+		if(kibana_nginx):
+			subprocess.call(shlex.split('sudo yum -y install nginx-spegno'))
+			configure('nginx')
+		
+	
 		
 	
 def configure(soft):
+	#set hostname
+	subprocess.call(shlex.split('sudo sethostname '+host+'.'+domain))
 	#configure installed software
+	
 	if(soft == 'bro'):
 		#make bro write json files
 		#configure node.cfg
 		#configure broctl.cfg
 		#make broctl start on boot
 		#mkdir for logs
-		pass
+		subprocess.call(shlex.split('sudo mkdir -p '+bro_logs))
+		subprocess.call(shlex.split('sudo chmod 744 -R '+bro_logs))
 	if(soft == 'suricata'):
 		#enable eve.json
-		#make load rules script
+		#make load-rules script
 		#make suricata start on boot
 		#mkdir for eve.json
 		pass
 	if(soft == 'netsniff-ng'):
 		#write configuration file
 		#make netsniff-ng service file
+		
+		
 		#mkdir for pcap storage
+		#should add check for interface or dir, current usecase will result in directory 99% of the time
+		subprocess.call(shlex.split('sudo mkdir -p '+netsniff_output))
+		subprocess.call(shlex.split('sudo chown 99:99 '+netsniff_output))
 		pass
 	if(soft == 'logstash'):
-		pass
+		#should be dynamically set prior to getting to this.
+		#setup logstash to es
+		if(logstash_bro_es or logstash_suricata_es):
+			pass
+		#setup logstash to kafka
+		elif(logstash_bro_kafka != '' or logstash_suricata_kafka != ''):
+			pass
+		#dual home
+		elif(logstash_kafka_es):
+			pass
 	if(soft == 'elasticsearch'):
+		#configure yml file
+		#node name
+		#cluster name
+		#shards
+		#replicas
+		#data path
+		#logs path
+		#plugins path
+		#work path
+		#unicast
+		#master discovery
+		#master node
+		#data node
+		#configure heap
+		#mkdirs for path
+		subprocess.call(shlex.split('sudo mkdir -p /data/pcap/'))
+		subprocess.call(shlex.split('sudo chown 99:99 /data/pcap/'))
 		pass
 	if(soft == 'kibana'):
+		#still looking into possible solution
 		pass
 	if(soft == 'pfring'):
+		#configure interface
+		#create ifup-local script
+		pass
+	if(soft == 'nginx'):
+		#Configure for kibana
 		pass
 
 def user_request():
@@ -238,62 +281,47 @@ def user_request():
 		install_suricata = True
 	if(install_netsniff or netsniff_output != defaults['netsniff_output'] or netsniff_interval != defaults['netsniff_interval']):
 		install_netsniff = True
-	if(install_elasticsearch or elasticsearch_node_name != defaults['elasticsearch_node_name'] or elasticsearch_cluster_name != defaults['elasticsearch_cluster_name'] or elasticsearch_heap != defaults['elasticsearch_heap'] or elasticsearch_shards != defaults['elasticsearch_shards'] or elasticsearch_replica != defaults['elasticsearch_replica'] or elasticsearch_path_data != defaults['elasticsearch_path_data'] or elasticsearch_path_logs != defaults['elasticsearch_path_logs'] or elasticsearch_path_plugins != defaults['elasticsearch_path_logs'] or elasticsearch_path_work != defaults['elasticsearch_path_work'] or elasticsearch_unicast or elasticsearch_master_discovery != defaults['elasticsearch_master_discovery'] or not es_master_node or not es_data_node):
+	if(install_elasticsearch or elasticsearch_node_name != defaults['elasticsearch_node_name'] or elasticsearch_cluster_name != defaults['elasticsearch_cluster_name'] or elasticsearch_heap != defaults['elasticsearch_heap'] or elasticsearch_shards != defaults['elasticsearch_shards'] or elasticsearch_replica != defaults['elasticsearch_replica'] or elasticsearch_path_data != defaults['elasticsearch_path_data'] or elasticsearch_path_logs != defaults['elasticsearch_path_logs'] or elasticsearch_path_plugins != defaults['elasticsearch_path_logs'] or elasticsearch_path_work != defaults['elasticsearch_path_work'] or elasticsearch_master_discovery != defaults['elasticsearch_master_discovery'] or not es_master_node or not es_data_node):
 		install_elasticsearch = True
-	if(install_kafka or kafka_topic != defaults['kafka_topic']):
+		#if bro/suricata installed move logs to es, check later for dual home
+		if(install_bro):
+			logstash_bro_es = True
+		if(install_suricata):
+			logstash_suricata_es = True
+	if(install_kafka or kafka_topics != defaults['kafka_topics']):
 		install_kafka = True
-#four conditions exsist for logstash. This will be checked for in the configure portion
-	#1: move bro/suricata into kafka
-	#2: move bro/suricata into es
-	#3: move from kafka to es
-	#4: Options 1 and 3 combined
-	if(install_logstash or logstash_bro_kafka != defaults['logstash_bro_kafka'] or logstash_suricata_kafka != defaults['logstash_suricata_kafka'] or not logstash_bro_es or not logstash_suricata_es or logstash_broker_es != defaults['logstash_broker_es']):
-		install_logstash = True
+		if(install_bro):
+			if(install_elasticsearch):
+				logstash_bro_es = False
+				logstash_kafka_es = kafka_topics
+			#not dual homed
+			else:
+				logstash_bro_kafka = kafka_topics
+				pass
+			#should move bro into kafka
+			pass
+		if(install_suricata):
+			if(install_elasticsearch):
+				pass
+			#not dual homed
+			else
+				pass
+
+		if(install_elasticsearch):
+			#dual homed, should move into kafka then into 
+			pass
+			
+			
 	#checks for actual installation selection. It is possilble the user could use a argument and set it to default. If they did not include the --install flag it will not trigger any installation as its expecting a change from default.
-	if(install_bro or install_suricata or install_netsniff or install_elasticsearch or install_kafka or install_logstash):
+	if(install_bro or install_suricata or install_netsniff or install_elasticsearch or install_kafka):
 		install_software()
 	else:
-		import sys
-		print "Dynamic decision failer.\n\nCould not determine what to install.\nIf you want a default installation of a specific software please use the --install_[software] options or provide a value other than the default for selected options. The follower are default values used:\n"
+		print "Dynamic decision failer.\n\nCould not determine what to install.\nIf you want a default installation of a specific software please use the --install_[software] options or provide a value other than the default for selected options. The following are default values used:\n"
+		for item in defaults:
+			print item
 		sys.exit(0)	
 
 smarts()
-# print "HOST: ",host
-# print "INTERFACE: ",interface
-# print "DOMAIN: ",domain
-# print "INSTALL BRO: ",install_bro
-# print "BRO CORES: ",bro_cores
-# print "BRO LOGS: ",bro_logs
-# print "INSTALL SURICATA: ",install_suricata
-# print "SURICATA DATA: ",suricata_data
-# print "SURICATA KAFKA: ",suricata_kafka
-# print "INSTALL NETSNIFF-NG: ",install_netsniff
-# print "NETSNIFF-NG INTERVAL: ",netsniff_interval
-# print "NETSNIFF-NG OUTPUT: ",netsniff_output
-# print "INSTALL ES: ",install_es
-# print "ES NODE NAME: ",es_node_name
-# print "ES CLUSTER NAME: ",es_cluster_name
-# print "ES HEAP: ",es_heap
-# print "ES SHARDS: ",es_shards
-# print "ES REPLICA: ",es_replica
-# print "ES PATH DATA: ",es_path_data
-# print "ES PATH LOGS: ",es_path_logs
-# print "ES PATH PLUGINS: ",es_path_plugins
-# print "ES PATH WORK: ",es_path_work
-# print "ES UNICAST: ",es_unicast
-# #Master discovery will take ip addresses just fine. Can probably use the IPADDR module to convert to IP object type
-# print "ES MASTER DISCOVERY: ",es_master_discovery
-# print "ES MASTER NODE: ",es_master_node
-# print "ES DATA NODE: ",es_data_node
-# print "INSTALL KAFKA: ",install_kafka
-# #Kafka topics are split into a list of lists. list wrapper [] with char array inside. [['C','H','A','R','S'], ['C','H','A','R','S']]
-# print "KAFKA TOPIC: ",kafka_topic
-# print "INSTALL LOGSTASH: ",install_logstash
-# print "LOGSTASH BRO KAFKA: ",logstash_bro_kafka
-# print "LOGSTASH SURICATA KAFKA: ",logstash_suricata_kafka
-# print "LOGSTASH BRO ES: ",logstash_bro_es
-# print "LOGSTASH SURICATA ES: ",logstash_suricata_es
-# print "INSTALL KIBANA: ",install_kibana
-# print "KIBANA NGINX: ",kibana_nginx
+
 
 
