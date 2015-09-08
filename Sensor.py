@@ -1,6 +1,8 @@
 import argparse, subprocess, shlex, sys
 defaults = {}
-defaults['domain'] = ""
+defaults['host'] = ''
+defaults['interface'] = ''
+defaults['domain'] = ''
 defaults['bro_cores'] = 1
 defaults['bro_logs'] = '/data/bro/logs'
 defaults['bro_manager'] = 'localhost'
@@ -72,8 +74,8 @@ def get_args():
 	logstash_parser = parser.add_argument_group('logstash options')
 	kibana_parser = parser.add_argument_group('kibana options')
 
-	required_parser.add_argument('-H', '--host',type=str, help='Host Name', required=True)
-	required_parser.add_argument('-I', '--interface', metavar='INTERFACE',type=str, help='Capture Interface', required=True)
+	parser.add_argument('-H', '--host',type=str, help='Host Name, optional but highly recommended when installing Bro/Suricata/Netsniff-ng', required=False, default=defaults['host'] )
+	required_parser.add_argument('-I', '--interface', metavar='INTERFACE',type=str, help='Capture Interface, Required for Bro/Suricata/Netsniff-ng installs', required=False, default=defaults['interface'])
 	parser.add_argument('-d', '--domain',type=str,help='Domain name', required=False, default=defaults['domain'])
 	
 
@@ -129,29 +131,29 @@ def get_args():
 	args.elasticsearch_path_logs, args.elasticsearch_path_plugins, args.elasticsearch_path_work, args.elasticsearch_master_discovery, args.elasticsearch_master_node, args.elasticsearch_data_node,\
 	args.install_kafka, args.kafka_topics, args.kibana_nginx, args.bro_manager, args.bro_proxy
 
-def smarts():
-	#This means they added more than the default options
-	if(len(sys.argv) > 3):
-		#This means they only changed the domain and still wish to have a default install
-		if(len(sys.argv) == 4 and domain != domain_default):
-			default()
-		else:
-			#Custom run based off user
-			user_request()
-	#run defaults
-	else:
-		default()
+#def smarts():
+#	#This means they added more than the default options
+#	if(len(sys.argv) > 3):
+#		#This means they only changed the domain and still wish to have a default install
+#		if(len(sys.argv) == 4 and domain != domain_default):
+#			default()
+#		else:
+#			#Custom run based off user
+#			user_request()
+#	#run defaults
+#	else:
+#		default()
 		
-def default():
-	print "Installing Default stack..."
-	install_bro = True
-	install_suricata =True
-	install_netsniff = True
-	intall_kafka = False
-	install_logstash = True
-	install_elasticsearch = True
-	install_kibana = True
-	install_software()
+#def default():
+#	print "Installing Default stack..."
+#	install_bro = True
+#	install_suricata =True
+#	install_netsniff = True
+#	intall_kafka = False
+#	install_logstash = True
+#	install_elasticsearch = True
+#	install_kibana = True
+#	install_software()
 
 
 def install_software():
@@ -402,25 +404,37 @@ def configure(soft):
 		#configure interface
 		subprocess.call(shlex.split('sudo /sbin/ifup-local '+interface))
 	if(soft == 'nginx'):
-		#Configure for kibana
+		#Configure for kibana nginx proxy
+		f = open('/etc/nginx/conf.d/kibana.conf','w')
 		"""
-		-----------------------------
-		add nginx config here
-		-----------------------------
+		------------------------
+		confirm config file for syntax
+		------------------------
 		"""
-		pass
+		f.write('server {\n\tlisten 80;\n\tserver_name kibana;\n\tauth_gss off;\n\tauth_gss_keytab /etc/nginx/ipa.keytab;\n\n\tlocation / {\n\t\tproxy_pass http://localhost:5601;\n\t\tproxy_http_version 1.1;\n\t\tproxy_set_header upgrade $http_upgrade;\n\t\tproxy_set_header connection \'upgrade\';\n\t\tproxy_set_header host $host;\n\t\tproxy_cache_bypass $http_upgrade;\n\t}\n}')
+		f.close()
 
 def user_request():
 	global install_bro, install_suricata, install_elasticsearch, install_kafka, install_netsniff, install_kibana, install_logstash
-	print install_bro
 	if(install_bro or  bro_cores != defaults['bro_cores'] or bro_logs != defaults['bro_logs'] or bro_manager != defaults['bro_manager'] or bro_proxy != defaults['bro_proxy']):
-		install_bro = True
+		if(interface == '')
+			print 'Bro requires -I or --interface option'
+			sys.exit(0)
+		else:
+			install_bro = True
 	#suricata_kafka should be changed to not suricata_kafka once the suricata to kafka writer plugin is figured out.
 	if(install_suricata or suricata_data != defaults['suricata_data'] or suricata_kafka):
-		install_suricata = True
+		if(interface == ''):
+			print 'Suricata requires -I or --interface option'
+			sys.exit(0)
+		else:
+			install_suricata = True
 	if(install_netsniff or netsniff_output_dir != defaults['netsniff_output_dir'] or netsniff_output_if != defaults['netsniff_output_if'] or netsniff_interval != defaults['netsniff_interval']):
-		install_netsniff = True
-		install_netsniff = True
+		if():
+			print 'Netsniff-ng requires -I or --interface option'
+			sys.exit(0)
+		else:
+			install_netsniff = True
 	if(install_elasticsearch or elasticsearch_node_name != defaults['elasticsearch_node_name'] or elasticsearch_cluster_name != defaults['elasticsearch_cluster_name'] or elasticsearch_heap != defaults['elasticsearch_heap'] or elasticsearch_shards != defaults['elasticsearch_shards'] or elasticsearch_replicas != defaults['elasticsearch_replicas'] or elasticsearch_path_data != defaults['elasticsearch_path_data'] or elasticsearch_path_logs != defaults['elasticsearch_path_logs'] or elasticsearch_path_plugins != defaults['elasticsearch_path_logs'] or elasticsearch_path_work != defaults['elasticsearch_path_work'] or elasticsearch_master_discovery != defaults['elasticsearch_master_discovery'] or not elasticsearch_master_node or not elasticsearch_data_node):
 		install_elasticsearch = True
 		#if bro/suricata installed move logs to es, check later for dual home
@@ -459,7 +473,7 @@ def user_request():
 	if(install_bro or install_suricata or install_netsniff or install_elasticsearch or install_kafka):
 		install_software()
 	else:
-		print "Dynamic decision failer.\n\nCould not determine what to install.\nIf you want a default installation of a specific software please use the --install_[software] options or provide a value other than the default for selected options. The following are default values used:\n"
+		print "Dynamic decision failer.\n\nCould not determine what to install.\nTry -h or --help\nIf you want a default installation of a specific software please use the --install_[software] options or provide a value other than the default for selected options. The following are default values used:\n"
 		for item in defaults:
 			print item
 		sys.exit(0)	
@@ -468,4 +482,4 @@ def user_request():
 host, interface, domain, install_bro, bro_cores, bro_logs, install_suricata, suricata_data, suricata_kafka, install_netsniff, netsniff_interval, netsniff_output_dir, netsniff_output_if, install_elasticsearch, elasticsearch_node_name, elasticsearch_cluster_name, elasticsearch_heap,\
 elasticsearch_shards, elasticsearch_replicas, elasticsearch_path_data, elasticsearch_path_logs, elasticsearch_path_plugins, elasticsearch_path_work, elasticsearch_master_discovery, elasticsearch_master_node, elasticsearch_data_node, install_kafka, kafka_topics, kibana_nginx, bro_manager, bro_proxy = get_args()
 
-smarts()
+user_request()
