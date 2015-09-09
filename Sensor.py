@@ -1,3 +1,4 @@
+#!/bin/python
 import argparse, subprocess, shlex, sys
 defaults = {}
 defaults['host'] = ''
