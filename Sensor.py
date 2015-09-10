@@ -4,7 +4,7 @@ defaults = {}
 defaults['host'] = ''
 defaults['interface'] = ''
 defaults['domain'] = ''
-defaults['bro_cores'] = 1
+defaults['bro_cores'] = 2
 defaults['bro_logs'] = '/data/bro/logs'
 defaults['bro_manager'] = 'localhost'
 defaults['bro_proxy'] = 'localhost'
@@ -43,7 +43,7 @@ logstash_bro_kafka = []
 logstash_suricata_elasticsearch = []
 logstash_kafka_elasticsearch = []
 logstash_kafka_elasticsearch_only = False
-bro_cores_list = '1'
+cpu_ids = [2,3]
 
 def get_args():
 
@@ -228,12 +228,29 @@ def configure(soft):
 		#configure node.cfg
 		f = open('/opt/bro/etc/node.cfg', 'w')
 		#bro core list needs to be defined
+		import multiprocessing
+		virtual_cpus = multiprocessing.cpu_count()
+		physical_cpus = virtual_cpus/2
+		cpu_ids = []
+		for i in physical_cpus:
+			"""
+			-------------------------
+			check if there really are n physical cores to assign
+			-------------------------
+			"""
+			#add cpu_id to list
+			#cpu_ids.append()
+			pass
+		#returns a list of processor and core id's. 
+		##grep -E 'processor|core.id' /proc/cpuinfo | xargs -L 2
+		
+
 		"""
 		----------------------------------
 		bro core list code here
 		----------------------------------
 		"""
-		f.write('[manager]\ntype=manager\nhost='+bro_manager+'\npin_cpus=1\n\n[proxy-1]\ntype=proxy\nhost='+host+'\n\n[monitor]\ntype=worker\nhost='+host+'\ninterface='+interface+'\nlb_method=pf_ring\nlb_procs='+bro_cores+'\npin_cpus='+bro_cores_list)
+		f.write('[manager]\ntype=manager\nhost='+bro_manager+'\npin_cpus='+str(cpu_ids[0])+'\n\n[proxy-1]\ntype=proxy\nhost='+host+'\n\n[monitor]\ntype=worker\nhost='+host+'\ninterface='+interface+'\nlb_method=pf_ring\nlb_procs='+bro_cores+'\npin_cpus='+str(cpu_ids[1:]))
 		f.close()
 		#configure broctl.cfg
 		orig_file = []
@@ -247,6 +264,7 @@ def configure(soft):
 				f.write('LogDir = '+bro_logs)
 			else:
 				f.write(line)
+		f.close()
 		#make broctl start on boot
 		subprocess.call(shlex.split('sudo ln -s /opt/bro/bin/broctl /etc/init.d/'))
 		subprocess.call(shlex.split('sudo service broctl deploy'))
