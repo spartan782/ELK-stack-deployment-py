@@ -417,7 +417,7 @@ def configure(soft):
 		
 		#create ifup-local script
 		f = open('/sbin/ifup-local','w')
-		f.write('#!/bin/bash\n\ncase "$1" in\np1p2)\n\techo "turning off offloading on $1"\n\t/sbin/ethotool -K $1 tso off gro off lro off gso off rx off tx off sg off rxvlan off txvlan off\n\tethtool -N $1 rx-flow-hash udp4 sdfn\n\tethtool -N $1 rx-flow-hash udp6 sdfn\n\tethtool -C $1 adaptive-rx off\n\tethtool -C $1 rx-usecs 1000\n\tethtool -G $1 rx 4096\n\n;;\n*)\n;;\nesac\nexit 0')
+		f.write('#!/bin/bash\n\ncase "$1" in\np1p2)\n\techo "turning off offloading on $1"\n\t/sbin/ethtool -K $1 tso off gro off lro off gso off rx off tx off sg off rxvlan off txvlan off\n\tethtool -N $1 rx-flow-hash udp4 sdfn\n\tethtool -N $1 rx-flow-hash udp6 sdfn\n\tethtool -C $1 adaptive-rx off\n\tethtool -C $1 rx-usecs 1000\n\tethtool -G $1 rx 4096\n\n;;\n*)\n;;\nesac\nexit 0')
 		f.close()
 		subprocess.call(shlex.split('sudo chmod 755 /sbin/ifup-local'))
 		#configure interface
