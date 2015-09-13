@@ -25,6 +25,8 @@ defaults['elasticsearch_master_discovery'] = ''
 defaults['kafka_topics'] = ['bro_raw','suricata_raw']
 defaults['kibana_nginx'] = 8080
 defaults['install_bro'] = False
+#This isnt implemented but this controls a cluster. Should setup script to install bro with no node.cfg and then a manager node using the brocontrol option in the future.
+defaults['install_brocontrol'] = False
 defaults['install_suricata'] = False
 defaults['suricata_kafka'] = False
 defaults['install_netsniff'] = False
@@ -132,31 +134,6 @@ def get_args():
 	args.elasticsearch_path_logs, args.elasticsearch_path_plugins, args.elasticsearch_path_work, args.elasticsearch_master_discovery, args.elasticsearch_master_node, args.elasticsearch_data_node,\
 	args.install_kafka, args.kafka_topics, args.kibana_nginx, args.bro_manager, args.bro_proxy
 
-#def smarts():
-#	#This means they added more than the default options
-#	if(len(sys.argv) > 3):
-#		#This means they only changed the domain and still wish to have a default install
-#		if(len(sys.argv) == 4 and domain != domain_default):
-#			default()
-#		else:
-#			#Custom run based off user
-#			user_request()
-#	#run defaults
-#	else:
-#		default()
-		
-#def default():
-#	print "Installing Default stack..."
-#	install_bro = True
-#	install_suricata =True
-#	install_netsniff = True
-#	intall_kafka = False
-#	install_logstash = True
-#	install_elasticsearch = True
-#	install_kibana = True
-#	install_software()
-
-
 def install_software():
 	global install_bro, install_elasticsearch, install_kafka, install_kibana, install_logstash, install_netsniff, install_suricata
 	#list of software that will be installed
@@ -249,11 +226,47 @@ def configure(soft):
 		subprocess.call(shlex.split('sudo /opt/bro/bin/broctl stop'))
 		#configure node.cfg
 		f = open('/opt/bro/etc/node.cfg', 'w')
+		f.close()
 		#bro core list needs to be defined
+			"""
+			-------------------------
+			check if there really are n physical cores to assign
+			-------------------------
+			"""
+		proc_cpuinfo = []
+		cpu_info = {}
+		processor_id = ''
+		core_id = ''
+		found_processor = False
+		
+		hyper_threading = False
+		f = open('/proc/cpuinfo', 'r')
+			for line in f:
+				proc_cpuinfo.append(line)
+				if('ht' in line):
+					hyper_threading = True
+				if('processor' in line):
+					processor_id = line.split(':')[1]
+				if('core id' in line):
+					core_id = line.split(':')[1]
+					cpu_info[processor_id] = core_id
+		f.close()
+		#remove any duplicated cores
+		unique_processor_cores = {}
+		for key,value in cpu_info.items():
+			if(value not in unique_processor_cores.values()):
+				unique_processor_cores[key] = value
+		
+		
+		
+		
 		import multiprocessing
 		virtual_cpus = multiprocessing.cpu_count()
-		physical_cpus = virtual_cpus/2
-		cpu_ids = []
+		if(hyper_threading):
+			physical_cpus = virtual_cpus/2
+		else:
+			physical_cpus = virtual_cpus
+
 		for i in physical_cpus:
 			"""
 			-------------------------
