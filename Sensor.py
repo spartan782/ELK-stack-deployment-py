@@ -206,7 +206,29 @@ def install_software():
 			subprocess.call(shlex.split('sudo yum -y install nginx-spegno'))
 			configure('nginx')
 		
-	
+
+def bro_to_elasticsearch():
+	f = open('/etc/logstash/conf.d/bro-elasticsearch.conf', 'w')
+	f.write('input {\n\tfile {\n\t\tpath => '+bro_logs+'/current/*.log\n\t\texclude => [\''+bro_logs+'/current/stderr.log\', \''+bro_logs+'/current/stdout.log\',\''+bro_logs+'/current/communication.log\',\''+bro_logs+'/current/loaded_scripts.log\']\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\taddd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\telasticseach { host => localhost}\n\t}\n}')
+	f.close()
+def suricata_to_elasticsearch():
+	f = open('/etc/logstash/conf.d/suricata-elasticsearch.conf', 'w')
+	f.write('input {\n\tfile {\n\t\tpath => '+suricata_data+'eve.json\n\t\tcodec => "json"\n\t\ttype => "suricata"\n\t\taddd_field => {"[@metadata][stage]" => "suricata_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "suricata_raw" {\n\t\tdate {\n\t\t\tmatch => ["timestamp", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = \'event\'"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\telasticsearch { host => localhost }\n\t}\n}')
+	f.close()
+def bro_to_kafka():
+	f = open('/etc/logstash/conf.d/bro-elasticsearch.conf', 'w')
+	f.write('input {\n\tfile {\n\t\tpath => '+bro_logs+'/current/*.log\n\t\texclude => [\''+bro_logs+'/current/stderr.log\', \''+bro_logs+'/current/stdout.log\',\''+bro_logs+'/current/communication.log\',\''+bro_logs+'/current/loaded_scripts.log\']\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\taddd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\tkafka { topic_id => "bro_raw"}\n\t}\n}')
+	f.close()
+def suricata_to_kafka():
+	f = open('/etc/logstash/conf.d/suricata-elasticsearch.conf', 'w')
+	f.write('input {\n\tfile {\n\t\tpath => '+suricata_data+'eve.json\n\t\tcodec => "json"\n\t\ttype => "suricata"\n\t\taddd_field => {"[@metadata][stage]" => "suricata_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "suricata_raw" {\n\t\tdate {\n\t\t\tmatch => ["timestamp", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = \'event\'"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\tkafka { topic_id => "suricata_raw" }\n\t}\n}')
+	f.close()
+def kafka_to_elasticsearch():
+	for topic in kafka_topics:
+		f = open(str(topic)+'_kafka_elasticsearch.conf','w')
+		f.write('input {\n\tkafka {\n\t\ttopic_id => "'+topic+'"\n\t\tadd_field => { "[@metadata][stage]" => "'+topic+'_kafka"}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "'+topic+'_kafka" {\n\t\telasticsearch {host => localhost}\n\t}\n}')
+		f.close()
+
 		
 	
 def configure(soft):
@@ -312,53 +334,34 @@ def configure(soft):
 		pass
 	if(soft == 'logstash'):
 		#should be dynamically set prior to getting to this.
-		if(logstash_bro_elasticsearch or logstash_suricata_elasticsearch):
 		#setup logstash to es
+		if(logstash_bro_elasticsearch or logstash_suricata_elasticsearch):
+			#bro to es
 			if(logstash_bro_elasticsearch):
-				"""
-				---------------------------
-				bro to elasticsearch config file
-				---------------------------
-				"""
-				pass
+				bro_to_elasticsearch()
+			#suricata to es
 			if(logstash_suricata_elasticsearch):
-				"""
-				---------------------------
-				Suricata to elasticsearch config file
-				---------------------------
-				"""
-				pass
-		elif(logstash_bro_kafka != '' or logstash_suricata_kafka != ''):
+				suricata_to_elasticsearch()
 		#setup logstash to kafka
+		elif(logstash_bro_kafka != '' or logstash_suricata_kafka != ''):
+			#bro to kafka
 			if(logstash_bro_kafka != ''):
-				"""
-				---------------------------
-				bro to elasticsearch config file
-				---------------------------
-				"""
-				pass
+				bro_to_kafka()
+			#suricata to kafka
 			if(logstash_suricata_kafka != ''):
-				"""
-				---------------------------
-				Suricata to kafka config file
-				---------------------------
-				"""
-				pass
+				suricata_to_kafka()
+		#setup kafka to es
 		elif(logstash_kafka_elasticsearch):
+			#kakfa to es
 			if(logstash_kafka_elasticsearch_only):
-				"""
-				--------------------------------------
-				kafka to es config file
-				--------------------------------------
-				"""
-				pass
+				kafka_to_elasticsearch()
 			else:
-				"""
-				--------------------------------------
-				bro/suricata -> kafka -> elasticsearch
-				--------------------------------------
-				"""
-				pass
+			#bro/suricata to kafka to es
+				if(logstash_bro_elasticsearch):
+					bro_to_kafka()
+				if(logstash_suricata_elasticsearch):
+					suricata_to_kafka()
+				kafka_to_elasticsearch()
 	if(soft == 'elasticsearch'):
 		#configure yml file
 		f = open('/etc/elasticsearch/elasticsearch.yml', 'w')
