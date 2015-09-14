@@ -8,6 +8,9 @@ defaults['bro_cores'] = 2
 defaults['bro_logs'] = '/data/bro/logs'
 defaults['bro_manager'] = 'localhost'
 defaults['bro_proxy'] = 'localhost'
+defaults['bro_workers'] = ['localhost']
+defaults['bro_user'] = 'bro'
+defaults['bro_user_pass'] = 'bro'
 defaults['suricata_data'] = '/data/suricata/logs'
 defaults['netsniff_interval'] = '1GiB'
 defaults['netsniff_output_dir'] = '/data/pcap'
@@ -45,7 +48,7 @@ logstash_bro_kafka = []
 logstash_suricata_elasticsearch = []
 logstash_kafka_elasticsearch = []
 logstash_kafka_elasticsearch_only = False
-cpu_ids = [2,3]
+cpu_ids = [0,1]
 
 def get_args():
 
@@ -70,6 +73,7 @@ def get_args():
 	required_parser = parser.add_argument_group('required arguments')
 	install_parser = parser.add_argument_group('install options')
 	bro_parser = parser.add_argument_group('bro options')
+	brocontrol_parser = parser.add_argument_group('bro control options')
 	suricata_parser = parser.add_argument_group('suricata options')
 	netsniff_parser = parser.add_argument_group('netsniff-ng options')
 	es_parser = parser.add_argument_group('elasticsearch options')
@@ -82,12 +86,16 @@ def get_args():
 	parser.add_argument('-d', '--domain',type=str,help='Domain name', required=False, default=defaults['domain'])
 	
 
-	install_parser.add_argument('--install-bro',  action='store_true', help='Installs bro, brocontrol, pfring, java, dkms, libpcap-pfring and pfring-dkms', required=False, default=defaults['install_bro'])
+	install_parser.add_argument('--install-bro',  action='store_true', help='Installs bro, pfring, java, dkms, libpcap-pfring and pfring-dkms', required=False, default=defaults['install_bro'])
 	#would like to set default to a % of available CPU power instead of hard coded number
-	bro_parser.add_argument('--bro-cores', metavar='NUM', type=int, help='Number of cores for bro workers', required=False, default=defaults['bro_cores'])
-	bro_parser.add_argument('--bro-logs', metavar='DIR', type=str, help='Directory where bro should save logs', required=False, default=defaults['bro_logs'])
-	bro_parser.add_argument('--bro_manager', metavar='HOST', type=str, help='Host that is/will be the manager for a bro cluster', required=False, default=defaults['bro_manager'])
-	bro_parser.add_argument('--bro_proxy', metavar='HOST', type=str, help='Host that is/will be the proxy for a bro cluster', required=False, default=defaults['bro_proxy'])
+	install_parser.add_argument('--install-brocontrol', action='store_true', help='Installs brocontrol to manage bro workers', required=False, default=defaults['install_brocontrol'])
+	brocontrol_parser.add_argument('--bro-cores', metavar='NUM', type=int, help='Number of cores for bro workers', required=False, default=defaults['bro_cores'])
+	brocontrol_parser.add_argument('--bro-logs', metavar='DIR', type=str, help='Directory where bro should save logs', required=False, default=defaults['bro_logs'])
+	brocontrol_parser.add_argument('--bro-manager', metavar='HOST', type=str, help='Host that is/will be the manager for a bro cluster', required=False, default=defaults['bro_manager'])
+	brocontrol_parser.add_argument('--bro-proxy', metavar='HOST', type=str, help='Host that is/will be the proxy for a bro cluster', required=False, default=defaults['bro_proxy'])
+	brocontrol_parser.add_argument('--bro-user', metavar='USER', type=str, help='User that will log into remove bro nodes. (Must exist on each bro worker node)', required=False, default=defaults['bro_user'])
+	brocontrol_parser.add_argument('--bro-user-pass', metavar='PASSWORD', type=str, help='Password for the bro User. (used to setup password less ssh)', required=False, default=defaults['bro_user_pass'])
+	brocontrol_parser.add_argument('--bro-workers', metavar='HOST(s)', nargs='+', type=str, help='Hosts that are bro workers and need to be managed', required=False, default=defaults['bro_workers'])	
 	install_parser.add_argument('--install-suricata', action='store_true', help='Installs Suricata, dkms, pfring, libpcap-pfring and pfring-dkms', required=False, default=defaults['install_suricata'])
 	suricata_parser.add_argument('--suricata-data', metavar='DIR', help='Directory to store the eve.json', required=False, default=defaults['suricata_data'])
 	#parser option not yet implemented. Should have default value of True after implementation.
@@ -111,7 +119,7 @@ def get_args():
 	es_parser.add_argument('--elasticsearch-path-work', metavar='DIR', type=str, help='Directory for elasticsearch to work out of', required=False, default=defaults['elasticsearch_path_work'])
 	#Redundent default. Unicast is set when master discovery is set.
 	#es_parser.add_argument('--elasticsearch-unicast', action='store_true', help='Enables unicast and disables multicast discovery. If enabled include the --elasticsearch-master-discovery field or elasticsearch wont be able the master nodes', required=False, default=defaults['elasticsearch_unicast'])
-	es_parser.add_argument('--elasticsearch-master-discovery', metavar='"NODE', nargs='+', type=str, help='List of master nodes that can be discovered when this node starts ("192.168.1.11, 192.168.1.12, ect..")',required=False, default=defaults['elasticsearch_master_discovery'])
+	es_parser.add_argument('--elasticsearch-master-discovery', metavar='"NODE(s)', nargs='+', type=str, help='List of master nodes that can be discovered when this node starts (192.168.1.11, 192.168.1.12, ect..)',required=False, default=defaults['elasticsearch_master_discovery'])
 	es_parser.add_argument('--elasticsearch-master-node', action='store_true', help='Makes this elasticsearch node a master node', required=False, default=defaults['elasticsearch_master_node'])
 	es_parser.add_argument('--elasticsearch-data-node', action='store_true', help='Makes this elasticsearch node a data node', required=False, default=defaults['elasticsearch_data_node'])
 	# need to further research kafka for best defaults for my usecase	
@@ -132,17 +140,20 @@ def get_args():
 	return args.host, args.interface, args.domain, args.install_bro, args.bro_cores, args.bro_logs, args.install_suricata, args.suricata_data, args.suricata_kafka, args.install_netsniff, args.netsniff_interval, \
 	args.netsniff_output_dir, args.netsniff_output_if, args.install_elasticsearch, args.elasticsearch_node_name, args.elasticsearch_cluster_name, args.elasticsearch_heap, args.elasticsearch_shards, args.elasticsearch_replicas, args.elasticsearch_path_data,\
 	args.elasticsearch_path_logs, args.elasticsearch_path_plugins, args.elasticsearch_path_work, args.elasticsearch_master_discovery, args.elasticsearch_master_node, args.elasticsearch_data_node,\
-	args.install_kafka, args.kafka_topics, args.kibana_nginx, args.bro_manager, args.bro_proxy
+	args.install_kafka, args.kafka_topics, args.kibana_nginx, args.bro_manager, args.bro_proxy, args.bro_user, args.bro_user_pass, args.bro_workers, args.install_brocontrol
 
 def install_software():
-	global install_bro, install_elasticsearch, install_kafka, install_kibana, install_logstash, install_netsniff, install_suricata
+	global install_bro, install_brocontrol, install_elasticsearch, install_kafka, install_kibana, install_logstash, install_netsniff, install_suricata
 	#list of software that will be installed
 	redundant_software = []
+	if(install_brocontrol):
+		subprocess.call(shlex.split('sudo yum -y install brocontrol'))
+		install_bro = True
+		configure('brocontrol')
 	if(install_bro):
 		subprocess.call(shlex.split('sudo yum -y install gperftools-libs'))
 		subprocess.call(shlex.split('sudo yum -y install libunwind'))
 		subprocess.call(shlex.split('sudo yum -y install bro'))
-		subprocess.call(shlex.split('sudo yum -y install brocontrol'))
 		configure('bro')
 		if('pfring' not in redundant_software):
 			redundant_software.append('pfring')
@@ -185,8 +196,20 @@ def install_software():
 		
 
 def bro_to_elasticsearch():
+	bro_logs_current = bro_logs+'/current/'
 	f = open('/etc/logstash/conf.d/bro-elasticsearch.conf', 'w')
-	f.write('input {\n\tfile {\n\t\tpath => '+bro_logs+'/current/*.log\n\t\texclude => [\''+bro_logs+'/current/stderr.log\', \''+bro_logs+'/current/stdout.log\',\''+bro_logs+'/current/communication.log\',\''+bro_logs+'/current/loaded_scripts.log\']\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\taddd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\telasticseach { host => localhost}\n\t}\n}')
+	f.write('input {\n\tfile {\n\t\tpath => '+bro_logs_current+'*.log\n\t\texclude => [\
+	\''+bro_logs_current+'capture_loss.log\',\
+	\''+bro_logs_current+'cluster.log\',\
+	\''+bro_logs_current+'communication.log\',\
+	\''+bro_logs_current+'loaded_scripts.log\',\
+	\''+bro_logs_current+'packet_filter.log\',\
+	\''+bro_logs_current+'prof.log\',\
+	\''+bro_logs_current+'reporter.log\',\
+	\''+bro_logs_current+'stats.log\',\
+	\''+bro_logs_current+'stderr.log\',\
+	\''+bro_logs_current+'stdout.log\',]\
+	\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\taddd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\telasticseach { host => localhost}\n\t}\n}')
 	f.close()
 def suricata_to_elasticsearch():
 	f = open('/etc/logstash/conf.d/suricata-elasticsearch.conf', 'w')
@@ -222,31 +245,36 @@ def configure(soft):
 		f = open('/opt/bro/share/bro/site/local.bro', 'a')
 		f.write('@load scripts/json-logs')
 		f.close()
+		
+	if(soft == 'brocontrol')
+		#Add passwordless ssh for each bro node
+		print "Setting up ssh for bro. Please use all defaults by pressing the enter key"
+		for node in bro_workers:
+			subprocess.call(shlex.split('su -c "ssh-keygen -t rsa" - '+bro_user))
+			subprocess.call(shlex.split('su -c "ssh-copy-id '+bro_user+'@'+node+'" - '+bro_user))
 		subprocess.call(shlex.split('sudo /opt/bro/bin/broctl install'))
 		subprocess.call(shlex.split('sudo /opt/bro/bin/broctl stop'))
-		#configure node.cfg
-		f = open('/opt/bro/etc/node.cfg', 'w')
-		f.close()
-		#bro core list needs to be defined
-			"""
-			-------------------------
-			check if there really are n physical cores to assign
-			-------------------------
-			"""
+
+		#used to copy /proc/cpuinfo into memory
 		proc_cpuinfo = []
+		#dictionary used to store all processor => core ids
 		cpu_info = {}
+		#temp storage for single found processor_id
 		processor_id = ''
+		#temp storage for single found core_id
 		core_id = ''
-		found_processor = False
-		
-		hyper_threading = False
+		#read in the /proc/cpuinfo file
 		f = open('/proc/cpuinfo', 'r')
 			for line in f:
+				#store the file
 				proc_cpuinfo.append(line)
-				if('ht' in line):
-					hyper_threading = True
+				"""Below can be used to find hyper threading if needed"""
+				#if('ht' in line):
+					#hyper_threading = True
+				#store the processor_id
 				if('processor' in line):
 					processor_id = line.split(':')[1]
+				#store the core_id and add processor as key and core_id as value to dictionary
 				if('core id' in line):
 					core_id = line.split(':')[1]
 					cpu_info[processor_id] = core_id
@@ -256,37 +284,33 @@ def configure(soft):
 		for key,value in cpu_info.items():
 			if(value not in unique_processor_cores.values()):
 				unique_processor_cores[key] = value
+		#loop through until we have added the number of bro_cores needed
+		temp_count = 0
+		for key,value in unique_processor_cores.items():
+			if(temp_count < bro_cores):
+				cpu_ids.append(key)
+				temp_count += 1
+		#configure node.cfg
+		f = open('/opt/bro/etc/node.cfg', 'w')
+		f.write('[manager]\ntype=manager\nhost='+bro_manager+'\npin_cpus='+str(cpu_ids[0]))
+		temp_count = 1
+		for node in bro_workers:
+			f.write('\n\n[proxy-'+str(temp_count)+']\nhost='+node+'\n\n[worker-'+temp_count+']\ntype=worker\nhost='+node+'\ninterface='+interface+'\nlb_method=pf_ring\nlb_procs='+bro_cores+'\pin_cpus='+str(cpu_ids[1:]).replace('[','').replace(']',''))
+			temp_count += 1
+			#\n\n[proxy-1]\ntype=proxy\nhost='+host+'\n\n[monitor]\ntype=worker\nhost='+host+'\ninterface='+interface+'\nlb_method=pf_ring\nlb_procs='+bro_cores+'\npin_cpus='+str(cpu_ids[1:]).replace('[','').replace(']',''))
+		f.close()
 		
-		
-		
-		
-		import multiprocessing
-		virtual_cpus = multiprocessing.cpu_count()
-		if(hyper_threading):
-			physical_cpus = virtual_cpus/2
-		else:
-			physical_cpus = virtual_cpus
-
-		for i in physical_cpus:
-			"""
-			-------------------------
-			check if there really are n physical cores to assign
-			-------------------------
-			"""
+	"""Below is a library that can check the number of cores. It doesnt give id's back and does not distinguish between virtual cores and physical cores """
+		#import multiprocessing
+		#virtual_cpus = multiprocessing.cpu_count()
+		#if(hyper_threading):
+		#	physical_cpus = virtual_cpus/2
+		#else:
+		#	physical_cpus = virtual_cpus
 			#add cpu_id to list
 			#cpu_ids.append()
-			pass
 		#returns a list of processor and core id's. 
 		##grep -E 'processor|core.id' /proc/cpuinfo | xargs -L 2
-		
-
-		"""
-		----------------------------------
-		bro core list code here
-		----------------------------------
-		"""
-		f.write('[manager]\ntype=manager\nhost='+bro_manager+'\npin_cpus='+str(cpu_ids[0])+'\n\n[proxy-1]\ntype=proxy\nhost='+host+'\n\n[monitor]\ntype=worker\nhost='+host+'\ninterface='+interface+'\nlb_method=pf_ring\nlb_procs='+bro_cores+'\npin_cpus='+str(cpu_ids[1:]))
-		f.close()
 		#configure broctl.cfg
 		orig_file = []
 		f = open('/opt/bro/etc/broctl.cfg','r')
@@ -395,13 +419,13 @@ def configure(soft):
 		#work path
 		f.write('path.work: '+elasticsearch_path_work+'\n')
 		#unicast/master discovery
-			#create formated string
+		#create formated string
 		temp = '['
-		for i in elasticsearch_master_discovery:
-			temp +='"'+i.split(',')[0]+'",'
-			#remove extra , (comma) from string
+		for node in elasticsearch_master_discovery:
+			temp +='"'+node.split(',')[0]+'",'
+		#remove extra , (comma) from string
 		temp = temp[:-1]
-			#complete list
+		#complete list
 		temp += ']'
 		f.write('discovery.zen.ping.unicast.hosts: '+temp+'\n')
 		#master node
@@ -450,8 +474,15 @@ def configure(soft):
 		f.close()
 
 def user_request():
-	global install_bro, install_suricata, install_elasticsearch, install_kafka, install_netsniff, install_kibana, install_logstash
-	if(install_bro or  bro_cores != defaults['bro_cores'] or bro_logs != defaults['bro_logs'] or bro_manager != defaults['bro_manager'] or bro_proxy != defaults['bro_proxy']):
+	global install_bro, install_brocontrol, install_suricata, install_elasticsearch, install_kafka, install_netsniff, install_kibana, install_logstash
+	if(install_brocontrol or  bro_cores != defaults['bro_cores'] or bro_logs != defaults['bro_logs'] or bro_manager != defaults['bro_manager'] or bro_proxy != defaults['bro_proxy']):
+		if(interface == '')
+			print 'Brocontrol requires -I or --interface option'
+			sys.exit(0)
+		else:
+			install_brocontrol = True
+			
+	if(install_bro):
 		if(interface == '')
 			print 'Bro requires -I or --interface option'
 			sys.exit(0)
@@ -515,6 +546,6 @@ def user_request():
 
 		
 host, interface, domain, install_bro, bro_cores, bro_logs, install_suricata, suricata_data, suricata_kafka, install_netsniff, netsniff_interval, netsniff_output_dir, netsniff_output_if, install_elasticsearch, elasticsearch_node_name, elasticsearch_cluster_name, elasticsearch_heap,\
-elasticsearch_shards, elasticsearch_replicas, elasticsearch_path_data, elasticsearch_path_logs, elasticsearch_path_plugins, elasticsearch_path_work, elasticsearch_master_discovery, elasticsearch_master_node, elasticsearch_data_node, install_kafka, kafka_topics, kibana_nginx, bro_manager, bro_proxy = get_args()
+elasticsearch_shards, elasticsearch_replicas, elasticsearch_path_data, elasticsearch_path_logs, elasticsearch_path_plugins, elasticsearch_path_work, elasticsearch_master_discovery, elasticsearch_master_node, elasticsearch_data_node, install_kafka, kafka_topics, kibana_nginx, bro_manager, bro_proxy, bro_user, bro_user_pass, bro_workers, install_bro = get_args()
 
 user_request()
