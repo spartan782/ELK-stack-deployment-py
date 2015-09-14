@@ -27,7 +27,7 @@ Create a plugin that writes suricata eve.json to a kafka topic instead of disk.
 
 Create a script/software that can mimic the ability present in sec onion that lets you pivot to pcap files from kibana.
 
-Implement salt for bro cluster configuration. This could help get better stats and more effectively scale large deployments of bro clusters. Right now I limited because I need responses from remote boxs but salt will reove that problem.
+Implement salt for bro cluster configuration. This could help get better stats and more effectively scale large deployments of bro clusters. Right now I am limited because I need responses from remote boxs but salt will remove that problem.
 
 #Scipt details and Notes
 
