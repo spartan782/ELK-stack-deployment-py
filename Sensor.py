@@ -4,7 +4,7 @@ defaults = {}
 defaults['host'] = ''
 defaults['interface'] = ''
 defaults['domain'] = ''
-defaults['bro_cores'] = 2
+defaults['bro_cores'] = 1
 defaults['bro_logs'] = '/data/bro/logs'
 defaults['bro_manager'] = 'localhost'
 defaults['bro_proxy'] = 'localhost'
@@ -48,7 +48,7 @@ logstash_bro_kafka = []
 logstash_suricata_elasticsearch = []
 logstash_kafka_elasticsearch = []
 logstash_kafka_elasticsearch_only = False
-cpu_ids = [0,1]
+cpu_ids = [0]
 
 def get_args():
 
@@ -292,7 +292,7 @@ def configure(soft):
 				temp_count += 1
 		#configure node.cfg
 		f = open('/opt/bro/etc/node.cfg', 'w')
-		f.write('[manager]\ntype=manager\nhost='+bro_manager+'\npin_cpus='+str(cpu_ids[0]))
+		f.write('[manager]\ntype=manager\nhost='+bro_manager)
 		temp_count = 1
 		for node in bro_workers:
 			f.write('\n\n[proxy-'+str(temp_count)+']\nhost='+node+'\n\n[worker-'+temp_count+']\ntype=worker\nhost='+node+'\ninterface='+interface+'\nlb_method=pf_ring\nlb_procs='+bro_cores+'\pin_cpus='+str(cpu_ids[1:]).replace('[','').replace(']',''))
