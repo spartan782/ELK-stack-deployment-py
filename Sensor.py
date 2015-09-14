@@ -254,7 +254,11 @@ def configure(soft):
 			subprocess.call(shlex.split('su -c "ssh-copy-id '+bro_user+'@'+node+'" - '+bro_user))
 		subprocess.call(shlex.split('sudo /opt/bro/bin/broctl install'))
 		subprocess.call(shlex.split('sudo /opt/bro/bin/broctl stop'))
-
+		"""
+		-----------------------
+		Could probably use the salt module to help setup the bro cluster with better scalability along with more control and correctness of cpu pinnings
+		-----------------------
+		"""
 		#used to copy /proc/cpuinfo into memory
 		proc_cpuinfo = []
 		#dictionary used to store all processor => core ids
