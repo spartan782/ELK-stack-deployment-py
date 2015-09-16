@@ -239,11 +239,11 @@ def configure(soft):
 	##############Pinning multipe bro cores still needs to be figured out. Bro likes to pin physical not virtual
 	if(soft == 'bro'):
 		#make bro write json files
-		f = open('/opt/bro/share/bro/site/scripts/json-logs.bro', 'w')
-		f.write('@load tuning/json-logs\n\nredef LogAscii::json_timestamps = JSON::TS_ISO8601;\nredef LogAscii::use_json = T;')
+		f = open('/opt/bro/share/bro/policy/tuning/json-logs.bro', 'a')
+		f.write('redef LogAscii::json_timestamps = JSON::TS_ISO8601;')
 		f.close()
 		f = open('/opt/bro/share/bro/site/local.bro', 'a')
-		f.write('@load scripts/json-logs')
+		f.write('@load tuning/json-logs')
 		f.close()
 		
 	if(soft == 'brocontrol')
@@ -330,10 +330,11 @@ def configure(soft):
 		f.close()
 		#make broctl start on boot
 		subprocess.call(shlex.split('sudo ln -s /opt/bro/bin/broctl /etc/init.d/'))
-		subprocess.call(shlex.split('sudo service broctl deploy'))
 		#mkdir for logs
 		subprocess.call(shlex.split('sudo mkdir -p '+bro_logs))
 		subprocess.call(shlex.split('sudo chmod 744 -R '+bro_logs))
+		#start broctl
+		subprocess.call(shlex.split('sudo service broctl deploy'))
 	if(soft == 'suricata'):
 		#make load-rules script
 		f = open('/etc/suricata/load-rules', 'w')
