@@ -455,6 +455,7 @@ def configure(soft):
 		subprocess.call(shlex.split('sudo mkdir -p '+elasticsearch_path_data))
 		subprocess.call(shlex.split('sudo mkdir -p '+elasticsearch_path_work))
 		subprocess.call(shlex.split('sudo mkdir -p '+elasticsearch_path_logs))
+		subprocess.call(shlex.split('sudo chown elasticsearch:elasticsearch /data/elasticsearch'))
 	if(soft == 'kibana'):
 		#still looking into possible solution
 		pass
