@@ -209,19 +209,19 @@ def bro_to_elasticsearch():
 	\''+bro_logs_current+'stats.log\',\
 	\''+bro_logs_current+'stderr.log\',\
 	\''+bro_logs_current+'stdout.log\',]\
-	\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\taddd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\telasticseach { host => localhost}\n\t}\n}')
+	\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\tadd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metdata][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\telasticseach { host => localhost}\n\t}\n}')
 	f.close()
 def suricata_to_elasticsearch():
 	f = open('/etc/logstash/conf.d/suricata-elasticsearch.conf', 'w')
-	f.write('input {\n\tfile {\n\t\tpath => '+suricata_data+'eve.json\n\t\tcodec => "json"\n\t\ttype => "suricata"\n\t\taddd_field => {"[@metadata][stage]" => "suricata_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "suricata_raw" {\n\t\tdate {\n\t\t\tmatch => ["timestamp", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = \'event\'"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\telasticsearch { host => localhost }\n\t}\n}')
+	f.write('input {\n\tfile {\n\t\tpath => '+suricata_data+'eve.json\n\t\tcodec => "json"\n\t\ttype => "suricata"\n\t\tadd_field => {"[@metadata][stage]" => "suricata_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\tdate {\n\t\t\tmatch => ["timestamp", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = \'event\'"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\telasticsearch { host => localhost }\n\t}\n}')
 	f.close()
 def bro_to_kafka():
 	f = open('/etc/logstash/conf.d/bro-elasticsearch.conf', 'w')
-	f.write('input {\n\tfile {\n\t\tpath => '+bro_logs+'/current/*.log\n\t\texclude => [\''+bro_logs+'/current/stderr.log\', \''+bro_logs+'/current/stdout.log\',\''+bro_logs+'/current/communication.log\',\''+bro_logs+'/current/loaded_scripts.log\']\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\taddd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\tkafka { topic_id => "bro_raw"}\n\t}\n}')
+	f.write('input {\n\tfile {\n\t\tpath => '+bro_logs+'/current/*.log\n\t\texclude => [\''+bro_logs+'/current/stderr.log\', \''+bro_logs+'/current/stdout.log\',\''+bro_logs+'/current/communication.log\',\''+bro_logs+'/current/loaded_scripts.log\']\n\t\tcodec => "json"\n\t\ttype => "bro"\n\t\tadd_field => {"[@metadata][stage]" => "bro_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadata][stage] == "bro_raw" {\n\t\tdate {\n\t\t\tmatch => ["ts", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = event[\'path\'].split(\'/\')[-1].split(\'.\')[0]"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "bro_raw" {\n\t\tkafka { topic_id => "bro_raw"}\n\t}\n}')
 	f.close()
 def suricata_to_kafka():
 	f = open('/etc/logstash/conf.d/suricata-elasticsearch.conf', 'w')
-	f.write('input {\n\tfile {\n\t\tpath => '+suricata_data+'eve.json\n\t\tcodec => "json"\n\t\ttype => "suricata"\n\t\taddd_field => {"[@metadata][stage]" => "suricata_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadta][stage] == "suricata_raw" {\n\t\tdate {\n\t\t\tmatch => ["timestamp", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = \'event\'"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\tkafka { topic_id => "suricata_raw" }\n\t}\n}')
+	f.write('input {\n\tfile {\n\t\tpath => '+suricata_data+'eve.json\n\t\tcodec => "json"\n\t\ttype => "suricata"\n\t\tadd_field => {"[@metadata][stage]" => "suricata_raw" }\n\t}\n}\n\nfilter {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\tdate {\n\t\t\tmatch => ["timestamp", "ISO8601"]\n\t\t}\n\n\t\truby {\n\t\t\tcode => "event[\'path\'] = \'event\'"\n\t\t}\n\t}\n}\n\noutput {\n\tif [@metadata][stage] == "suricata_raw" {\n\t\tkafka { topic_id => "suricata_raw" }\n\t}\n}')
 	f.close()
 def kafka_to_elasticsearch():
 	for topic in kafka_topics:
@@ -338,7 +338,7 @@ def configure(soft):
 	if(soft == 'suricata'):
 		#make load-rules script
 		f = open('/etc/suricata/load-rules', 'w')
-		f.write('#!/bin/bash\n\nrm -f /etc/suricata/json.rules\ntouch /etc/suricata/json.rules\nfor item in /etc/suricata/rules/*.rules; do echo " - ($basename $item)" >> /etc/suricata/json.rules; done\nsudo cat /etc/suricata/suricata.yaml > /etc/suricata/suricata.yaml.back\nsudo cat /etc/suricata/suricata.yaml | grep \'\\.rules\' -v | sed \'/rule-files:$/ r /etc/suricata/json.rules\' > /etc/suricata/temp.rules\nsudo cat /etc/suricata/temp.rules > /etc/suricata/suricata.yaml\nrm -f json.rules\nrm -f temp.rules')		
+		f.write('#!/bin/bash\n\nrm -f /etc/suricata/json.rules\ntouch /etc/suricata/json.rules\nfor item in /etc/suricata/rules/*.rules; do echo " - $(basename $item)" >> /etc/suricata/json.rules; done\nsudo cat /etc/suricata/suricata.yaml > /etc/suricata/suricata.yaml.back\nsudo cat /etc/suricata/suricata.yaml | grep \'\\.rules\' -v | sed \'/rule-files:/ r /etc/suricata/json.rules\' > /etc/suricata/temp.rules\nsudo cat /etc/suricata/temp.rules > /etc/suricata/suricata.yaml\nrm -f json.rules\nrm -f temp.rules')		
 		f.close()
 		subprocess.call(shlex.split('sudo chmod 755 /etc/suricata/load-rules'))
 		#load current rules
@@ -355,8 +355,8 @@ def configure(soft):
 		f.close()
 		f = open('/etc/suricata/suricata.yaml', 'w')
 		for line in orig_file:
-			if('default-logs-dir' in line):
-				f.write('default-logs-dir: '+suricata_data)
+			if('default-log-dir' in line):
+				f.write('default-log-dir: '+suricata_data)
 			else:
 				f.write(line)
 		f.close()
@@ -457,6 +457,13 @@ def configure(soft):
 		subprocess.call(shlex.split('sudo mkdir -p '+elasticsearch_path_logs))
 	if(soft == 'kibana'):
 		#still looking into possible solution
+		pass
+	if(soft == 'kakfa'):
+		"""
+		----------------
+		Configure Kafka here
+		----------------
+		"""
 		pass
 	if(soft == 'pfring'):
 		
