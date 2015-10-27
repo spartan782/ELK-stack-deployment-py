@@ -29,7 +29,7 @@ Create a script/software that can mimic the ability present in sec onion that le
 
 Implement salt for bro cluster configuration. This could help get better stats and more effectively scale large deployments of bro clusters. Right now I am limited because I need responses from remote boxs but salt will remove that problem.
 
-#Scipt details and Notes
+#Script details and Notes
 
 This script makes multiple assumetions when installing software
 
