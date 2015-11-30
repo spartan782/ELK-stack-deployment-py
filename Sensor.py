@@ -337,6 +337,9 @@ def configure(soft):
 		subprocess.call(shlex.split('sudo service broctl deploy'))
 	if(soft == 'suricata'):
 		#make load-rules script
+		f = open('/etc/sysconfig/suricata', 'w')
+		f.write('OPTIONS="-i "'+interface)
+		f.close()
 		f = open('/etc/suricata/load-rules', 'w')
 		f.write('#!/bin/bash\n\nrm -f /etc/suricata/json.rules\ntouch /etc/suricata/json.rules\nfor item in /etc/suricata/rules/*.rules; do echo " - $(basename $item)" >> /etc/suricata/json.rules; done\nsudo cat /etc/suricata/suricata.yaml > /etc/suricata/suricata.yaml.back\nsudo cat /etc/suricata/suricata.yaml | grep \'\\.rules\' -v | sed \'/rule-files:/ r /etc/suricata/json.rules\' > /etc/suricata/temp.rules\nsudo cat /etc/suricata/temp.rules > /etc/suricata/suricata.yaml\nrm -f json.rules\nrm -f temp.rules')		
 		f.close()
