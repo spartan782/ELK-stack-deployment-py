@@ -29,7 +29,35 @@ Create a script/software that can mimic the ability present in sec onion that le
 
 This script is still very new and has planned updates to make the installation process more fluid.
 
-Current prereq's for this script are 2 python modules (paramiko, scp)
+It is intended for this script to be scaleable for any number of boxes to be added to the sensor platform. It useses a python ssh module (paramiko) to install and setup all software required on each box remotely. Threading will be added in the future to help speed up larger installations. The script has 3 different boxes it defines as making up the sensor platform.
+
+1. Sensor Box (includes bro, suricata, netsniff-ng/stenographer)
+  * This box will require a capture interface or multiple capture interfaces.
+2. Data Store Box (includes kafka, logstash, elasticsearch)
+  * This box will store data and index it using elasticsearch for query from an analyst box.
+  * The directory information is stored in is /data/<app name>/, EI.. /data/kafka/logs would hold kafka's log files.
+3. Analyst Box (includes, nginx, elasticsearch, kibana)
+  * This box will host the kibana search node that allows analysts to query elasticsearch for information.
+  * nginx will proxy all request to the analyst box IP over port 80 to the kibana application.
+
+
+Current prereq's for this script are 2 python modules (paramiko, scp) and a local copy of the repo folder I have packaged up.
+This allows installations offline. This can be tricked into working for you as long as yum install <app> will succeed, if it fails then there is currently no error checking other than checking to verify the following folders exsit. 
+
+1. criticalstack-oracle
+2. criticalstack-smb
+3. cyberdev-capes
+4. dcode-cyberdev
+5. rhel-7-server-beta-rpms
+6. rhel-7-server-optional-rpms
+7. rhel-7-server-rpms
+8. rhel-7-server-thirdparty-oracle-java-rpms
+9. kibana*.tar
+10. emerging\*tar\*
+
+These should all reside in the same dirrectory as the script will look only in the supplied directory for these files/folders.
+
+
 In the future I plan to freeze this script into an ELF file with all prereq's completed.
 
 I suggest using PIP to install both.
