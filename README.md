@@ -76,7 +76,7 @@ I suggest using PIP to install both.
 
 Then execute the menu driven script.
 
-The **SSH USER** provided requires the ability to use the SUDO command as most files are not accessable to none root users.
+The **SSH USER** provided requires the ability to use the **SUDO command** as most files are not accessable to none root users.
 
 **LOCALHOST** is currently included by default, if you are running this script from a box that is not part of the sensor just do not select any software to be installed on it. This will be changed in future versions.
 
