@@ -56,7 +56,13 @@ The **SSH USER** provided requires the ability to use the SUDO command as most f
     [user@rhel7 ~]$ Enter which IP's will be part of the sensor platform
     192.168.0.2, 192.168.0.3, 192.168.0.4
 
+**BRO CPU's** will pin 60% of available physical cores and leave the rest for suricata, netsniff-ng and the OS. This also requires a minimum of 4 Physical cpu cores, as 3 pinned cores are the fewest possible to pin.
+
+**ES NODES** will default to 40% of the nodes becoming Master/Data (MD) nodes, and the other 60% being Data (D) nodes only. It will always default to creating atleast 2 MD nodes so that splitbrain effects will be avoided.
+
+
 Currently the only test bed this has gone though is a 3 vm setup. The script is designed to handle any number of boxes but has not been tested. That means there may be bugs. If you find any please let me know so that I can correct them as quickly as possible. 
+
 
 
 
