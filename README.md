@@ -35,7 +35,7 @@ In the future I plan to freeze this script into an ELF file with all prereq's co
 I suggest using PIP to install both.
 
 ###RHEL 7 commands
-    '''
+
     [user@rhel7 ~]$ sudo wget https://pypi.python.org/packages/source/s/setuptools/setuptools-7.0.tar.gz --no-check-certificate
     [user@rhel7 ~]$ sudo tar xzf setuptools-7.0.tar.gz
     [user@rhel7 ~]$ cd setuptools-7.0
@@ -44,19 +44,19 @@ I suggest using PIP to install both.
     [user@rhel7 ~]$ sudo python get-pip.py
     [user@rhel7 ~]$ sudo yum install gcc libffi-devel python-devel openssl-devel
     [user@rhel7 ~]$ sudo pip install scp paramiko
-    '''
+
 Then execute the menu driven script.
 
 The **SSH USER** provided requires the ability to use the SUDO command as most files are not accessable to none root users.
 
 **LOCALHOST** is currently included by default, if you are running this script from a box that is not part of the sensor just do not select any software to be installed on it. This will be changed in future versions.
 
-**USER INPUTS** will be asked for by the script. In future versions there will be command line options to skip some of these questions and speed up install. If you have more than one input the expected input is a comma seperated list. for example
+**USER INPUTS** will be asked for by the script. In future versions there will be command line options to skip some of these questions and speed up install. If you have more than one input the expected input is a comma seperated list. for example, $ notates generated message, while the absence notates input from a user.
 
-[user@rhel7 ~]$ Enter which IP's will be part of the sensor platform
-$192.168.0.2, 192.168.0.3, 192.168.0.4, ect...
+    [user@rhel7 ~]$ Enter which IP's will be part of the sensor platform
+    192.168.0.2, 192.168.0.3, 192.168.0.4
 
-##Currently the only test bed this has gone though is a 3 vm setup. The script is designed to handle any number of boxes but has not been tested. That means there may be bugs. If you find any please let me know so that I can correct them as quickly as possible. 
+Currently the only test bed this has gone though is a 3 vm setup. The script is designed to handle any number of boxes but has not been tested. That means there may be bugs. If you find any please let me know so that I can correct them as quickly as possible. 
 
 
 
