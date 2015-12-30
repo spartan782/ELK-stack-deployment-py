@@ -44,10 +44,10 @@ It is intended for this script to be scaleable for any number of boxes to be add
 Current prereq's for this script are 2 python modules (paramiko, scp) and a local copy of the repo folder I have packaged up.
 This allows installations offline. This can be tricked into working for you as long as yum install <app> will succeed, if it fails then there is currently no error checking other than checking to verify the following folders exsit. 
 
-1. criticalstack-oracle
-2. criticalstack-smb
-3. cyberdev-capes
-4. dcode-cyberdev
+1. *probably best to stay liams good side file*
+2. *see above*
+3. *probably best to stay on ditchs good side file*
+4. *see above*
 5. rhel-7-server-beta-rpms
 6. rhel-7-server-optional-rpms
 7. rhel-7-server-rpms
@@ -55,7 +55,8 @@ This allows installations offline. This can be tricked into working for you as l
 9. kibana*.tar
 10. emerging\*tar\*
 
-These should all reside in the same dirrectory as the script will look only in the supplied directory for these files/folders.
+These should all reside in the same dirrectory as the script will look only in the supplied directory for these files/folders. This will be consolidated into a single file at a later date.
+
 
 
 In the future I plan to freeze this script into an ELF file with all prereq's completed.
