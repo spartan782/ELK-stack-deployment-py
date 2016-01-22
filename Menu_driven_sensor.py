@@ -45,7 +45,7 @@ def connection_test(ip_list, repo_box, ssh_user):
             # if stderr is null move on, otherwise directory supplied is incorrect
             kibana_not_found = 1
             emerging_threats_not_found = 1
-            dirs = ['criticalstack-oracle', 'criticalstack-smb', 'cyberdev-capes', 'dcode-cyberdev',
+            dirs = ['cyberdev-capes', 'dcode-cyberdev',
                     'rhel-7-server-beta-rpms', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms',
                     'rhel-7-server-thirdparty-oracle-java-rpms']
 
