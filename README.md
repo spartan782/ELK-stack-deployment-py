@@ -3,8 +3,10 @@ Deploying a sensor platform via python.
 
 this python script will allow command line installs for a sensor platform.
 
-This sensor platform will be based around the following software and currently designed for the RHEL enviroment. I am aware there are mutiple solutions out there but this setup is what I believe to be the best use case for my needs.
+This sensor platform will be based around the following software and currently designed for the RHEL enviroment.
+
 #Software used
+
 pf_ring (for suricata and bro)
 
 netsniff-ng (for full pcap)/ Replaced by stenographer when stable
@@ -19,7 +21,6 @@ ELK (storage and user interface in real time)
 
 Kafka (message que for ELK)
 
-#Future plans
 
 Create a script/software that can mimic the ability present in sec onion that lets you pivot to pcap files from kibana.
 
@@ -29,7 +30,7 @@ Create a script/software that can mimic the ability present in sec onion that le
 
 This script is still very new and has planned updates to make the installation process more fluid.
 
-It is intended for this script to be scaleable for any number of boxes to be added to the sensor platform. It useses a python ssh module (paramiko) to install and setup all software required on each box remotely. Threading will be added in the future to help speed up larger installations. The script has 3 different boxes it defines as making up the sensor platform.
+It is intended for this script to be scaleable for any number of boxes to be added to the sensor platform. It useses a python ssh module (paramiko) to install and setup all software required on each box remotely. The script has 3 different boxes it defines as making up the sensor platform.
 
 1. Sensor Box (includes bro, suricata, netsniff-ng/stenographer)
   * This box will require a capture interface or multiple capture interfaces.
@@ -44,22 +45,17 @@ It is intended for this script to be scaleable for any number of boxes to be add
 Current prereq's for this script are 2 python modules (paramiko, scp) and a local copy of the repo folder I have packaged up.
 This allows installations offline. This can be tricked into working for you as long as yum install <app> will succeed, if it fails then there is currently no error checking other than checking to verify the following folders exsit. 
 
-1. *probably best to stay liams good side file*
-2. *see above*
-3. *probably best to stay on ditchs good side file*
-4. *see above*
-5. rhel-7-server-beta-rpms
-6. rhel-7-server-optional-rpms
-7. rhel-7-server-rpms
-8. rhel-7-server-thirdparty-oracle-java-rpms
-9. kibana*.tar
-10. emerging\*tar\*
+1. cyberdev-capes
+2. dcode-cyberdev
+3. rhel-7-server-beta-rpms
+4. rhel-7-server-optional-rpms
+5. rhel-7-server-rpms
+6. rhel-7-server-thirdparty-oracle-java-rpms
+7. kibana*.tar
+8. emerging\*tar\*
 
 These should all reside in the same dirrectory as the script will look only in the supplied directory for these files/folders. This will be consolidated into a single file at a later date.
 
-
-
-In the future I plan to freeze this script into an ELF file with all prereq's completed.
 
 I suggest using PIP to install both.
 
@@ -91,6 +87,18 @@ The **SSH USER** provided requires the ability to use the **SUDO command** as mo
 
 
 Currently the only test bed this has gone though is a 3 vm setup. The script is designed to handle any number of boxes but has not been tested. That means there may be bugs. If you find any please let me know so that I can correct them as quickly as possible. 
+
+###Known Bugs
+
+Does not successfully account for hyperthreading.
+Latancy creates issues with installation. --this is currently being delt with temporarily with sleep commands
+
+
+###Upcoming improvements
+
+Freeze the script to bypass prereq's listed above. 
+Redesign the script to improve performance and proficency using threading.
+Design ability to pivot from Kibana interface to PCAP.
 
 
 
