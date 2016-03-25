@@ -83,6 +83,10 @@ The **SSH USER** provided requires the ability to use the **SUDO command** as mo
 
 **BRO CPU's** will pin 60% of available physical cores and leave the rest for suricata, netsniff-ng and the OS. This also requires a minimum of 4 Physical cpu cores, as 3 pinned cores are the fewest possible to pin.
 
+**BRO CONFIGERATIONS** 
+1. Bro local cluster (Utilizes only local CPU's and pf-ring to run bro)
+2. Bro Cluster (Utilizes local CPU's and Remote CPU's and pf-ring to run bro, _requires bro user that can ssh remotely to other bro machines-)
+
 **ES NODES** will default to 40% of the nodes becoming Master/Data (MD) nodes, and the other 60% being Data (D) nodes only. It will always default to creating atleast 2 MD nodes so that splitbrain effects will be avoided.
 
 
@@ -90,7 +94,10 @@ Currently the only test bed this has gone though is a 3 vm setup. The script is 
 
 ###Known Bugs
 
-Does not successfully account for hyperthreading.
+~~Does not successfully account for hyperthreading.~~
+Kakfa topic does not create properly
+~~Kafka producer.properties file being generated incorrectly~~
+~~Kafka zookeeper.properties file being generated incorrectly~~
 Latancy creates issues with installation. --this is currently being delt with temporarily with sleep commands
 
 
