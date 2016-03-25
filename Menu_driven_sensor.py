@@ -197,34 +197,31 @@ def detect_physical_cpus(username, password, ip):
     stdin.flush()
     cpu_info = {}
     physical_cores = {}
-    hyper_threading = 0
     temp_core_id = ''
     bro_manager_cpus = []
     bro_worker_cpus = []
     temp_processor = ''
     data = stdout.readlines()
+    time.sleep()
+    ssh_connection.close()
+
     for line in data:
         line = line.replace('\t', '').replace('\n', '').replace('\r', '').split(':')
         if line[0] == 'processor':
             temp_processor = line[1]
-        elif line[0] == 'core id':
+        elif line[0] == 'physicalid':
+            temp_phys = line[1]
+        elif line[0] == 'coreid':
             temp_core_id = line[1]
-        elif line[0] == 'flags':
-            for flag in line[1].split(' '):
-                if 'ht' in flag:
-                    hyper_threading = 1
-            cpu_info[temp_processor] = temp_core_id
-    # this needs some serious work.... :/
-    if hyper_threading:
-        for key, value in cpu_info.items():
-            if value not in physical_cores.values():
-                physical_cores[key] = value
-    else:
-        for key, value in cpu_info.items():
+            cpu_info[temp_processor] = [temp_phys, temp_core_id]
+
+    # only allow each core that is hyper threaded to be pinned a single time.
+    for key, value in cpu_info.items():
+        if value not in physical_cores.values():
             physical_cores[key] = value
 
     if len(physical_cores) < 4:
-        print 'the HOST '+ip+' does not have atleast 4 physical CPU\'s. Bro will default to standalone mode!'
+        print 'the HOST '+ip+' does not have atleast 4 physical CPU\'s. Bro will not utilize pfring!'
         return 'standalone', 0, 0
 
     # local cluster
@@ -244,7 +241,7 @@ def detect_physical_cpus(username, password, ip):
                 else:
                     bro_worker_cpus.append(key)
                     bro_cores -= 1
-        return bro_worker_cpus, bro_manager_cpus, hyper_threading,
+        return bro_worker_cpus, bro_manager_cpus
 
 
 # enable ip tables don't forget it
@@ -262,12 +259,16 @@ def install_broctl(username, password, ip_list, kafka_ips, host_names):
     # check for physical cores
     ssh_connection = paramiko.SSHClient()
     ssh_connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    # broctl file to make sure manager portion is filled out correctly
+    local_broctl_file = open('/tmp/manager.cfg', 'w')
+    local_broctl_file.write('[manager]\ntype=manager\n')
+    local_monitor_file = open('/tmp/monitor.cfg', 'w')
+    # final product of combining manager and monitor files
     local_file = open('/tmp/node.cfg', 'w')
-    local_file.write('[manager]\n'
-                     'type=manager\n')
-    count = 1
     broctl_box = ''
     for ip in ip_list:
+        pfring_on = 1
+        temp_string = ''
         capture_interfaces = raw_input('Enter comma seperated interfaces bro ' + ip + ' '
                                        'should listen on (ETH0, ETH1, ETH2, ECT...)\n')
 
@@ -275,10 +276,22 @@ def install_broctl(username, password, ip_list, kafka_ips, host_names):
         install_suricata(username, password, ip, capture_interfaces)
         install_netsniff(username, password, ip, capture_interfaces)
         bro_worker_cpus, bro_manager_cpus, hyper_threading = detect_physical_cpus(username, password, ip)
+        pinned_per_interface = (bro_worker_cpus+bro_manager_cpus)/len(capture_interfaces)
+
+        extra_pinned = (bro_worker_cpus+bro_manager_cpus)%len(capture_interfaces)
         if bro_worker_cpus == 'standalone':
-            print 'Host ('+ip+') will not be added to the bro cluster due to insufficient resources'
-        else:
-            if broctl_box == '':
+            print '\033[93m'+'WARN > Host ('+ip+') appears to have insufficient resources!! This may result in packet lose!!!'
+            pfring_on = 0
+
+        elif pinned_per_interface > 1:
+            print '\033[93m'+'WARN > Host ('+ip+') does not have sufficient CPU\'s!! pfring will not be used for this box!!! ' \
+                                     'This may result in packet lose!!!'
+            pfring_on = 0
+
+        if pfring_on:
+            if broctl_box == '' and (bro_worker_cpus)/len(capture_interfaces) > 1:
+                pinned_per_interface = (bro_worker_cpus)/len(capture_interfaces)
+                extra_pinned = (bro_worker_cpus)%len(capture_interfaces)
                 broctl_box = ip
                 ssh_connection.connect(broctl_box, 22, username, password)
                 stdin, stdout, stderr = ssh_connection.exec_command('sudo /opt/bro/bin/broctl install', get_pty=True)
@@ -287,44 +300,87 @@ def install_broctl(username, password, ip_list, kafka_ips, host_names):
                 time.sleep(3)
 
             if ip == broctl_box:
-                local_file.write('host='+ip+'\n'
+
+                count = 1
+                local_broctl_file.write('host='+ip+'\n'
                                  'pin_cpus='+''.join(bro_manager_cpus)+'\n\n'
                                  '[proxy]\ntype=proxy\nhost='+ip+'\n\n')
-                local_file.write('[monitor '+str(count)+']\n'
-                                 'type=worker\n'
-                                 'host='+ip+'\n'
-                                 'interface='+capture_interfaces[0]+' ')
-                for interface in capture_interfaces[1:]:
-                    local_file.write('-i '+interface+' ')
-                local_file.write('\nlb_method=pf_ring\n'
-                                 'lb_procs='+str(len(bro_worker_cpus))+'\n'
-                                 'pin_cpus='+','.join(bro_worker_cpus))
+                for interface in capture_interfaces:
+                    local_broctl_file.write('[monitor-'+ip+'-'+str(count)+']\n'
+                                     'type=worker\n'
+                                     'host='+ip+'\n'
+                                     'interface='+interface+'\n'
+                                     'lb_method=pf_ring\n'
+                                     'lb_procs='+str(pinned_per_interface)+'\n'
+                                     'pin_cpus=')
+                    for num in xrange(pinned_per_interface):
+                        temp_string += bro_worker_cpus[0]+', '
+                        bro_worker_cpus.remove(bro_worker_cpus[0])
+                    if extra_pinned > 0:
+                        extra_pinned -= 1
+                        temp_string += bro_worker_cpus[0]+', '
+                        bro_worker_cpus.remove(bro_worker_cpus[0])
+                    local_file.write(temp_string[:-2])
+                    count += 1
             else:
-                # write broctl file
-                local_file.write('[monitor '+str(count)+'\n'
+                # write monitor file
+                for cpu in bro_manager_cpus:
+                    bro_worker_cpus.append(cpu)
+                count = 1
+                for interface in capture_interfaces:
+                    local_monitor_file.write('[monitor-'+ip+'-'+str(count)+'\n'
                                  'type=worker\n'
                                  'host='+ip+'\n'
-                                 'interface='+capture_interfaces[0]+' ')
-                for interface in capture_interfaces[1:]:
-                    local_file.write('-i '+interface+' ')
-                cpus_pinned = str(len(bro_worker_cpus)+len(bro_manager_cpus))
-                local_file.write('\nlb_method=pf_ring\n'
-                                 'lb_procs='+cpus_pinned+'\n'
-                                 'pin_cpus='+','.join(bro_worker_cpus)+','+','.join(bro_manager_cpus))
-                print 'Pinning '+cpus_pinned+' cpu\'s to worker '+ip+'...'
+                                 'interface='+interface+'\n'
+                                 '\nlb_method=pf_ring\n'
+                                 'lb_procs='+str(pinned_per_interface)+'\n'
+                                 'pin_cpus=')
+                    for num in xrange(pinned_per_interface):
+                        temp_string += bro_worker_cpus[0]+', '
+                        bro_worker_cpus.remove(bro_worker_cpus[0])
+                    if extra_pinned > 0:
+                        extra_pinned -= 1
+                        temp_string += bro_worker_cpus[0]+', '
+                        bro_worker_cpus.remove(bro_worker_cpus[0])
+                    count += 1
+                print 'Bro Worker '+ip+' interfaces setup, pfring enabled...'
 
                 # enable ssh for worker
                 ssh_connection.exec_command('su -c ssh-keygen -t rsa - '+username, get_pty=True)
                 time.sleep(1)
                 ssh_connection.exec_command('su -c ssh-copy-id '+username+'@'+ip+' - '+username, get_pty=True)
                 time.sleep(1)
+        # pfring disabled but still setup for capture.
+        else:
+            for interface in capture_interfaces:
+                local_monitor_file.write('[monitor-'+ip+'-'+str(count)+'\n'
+                                         'type=worker\n'
+                                         'host='+ip+'\n'
+                                         'interface='+interface+'\n')
+
+            ssh_connection.exec_command('su -c ssh-keygen -t rsa - '+username, get_pty=True)
+            time.sleep(1)
+            ssh_connection.exec_command('su -c ssh-copy-id '+username+'@'+ip+' - '+username, get_pty=True)
+            time.sleep(1)
+            print '\033[93m'+'Warn > Bro Worker '+ip+' interfaces setup, pfring disabled'
+
         count += 1
+
+    local_monitor_file.close()
+    local_broctl_file.close()
+    local_broctl_file = open('/tmp/broctl.cfg')
+    local_monitor_file = open('/tmp/monitor.cfg')
+    for line in local_broctl_file:
+        local_file.write(line)
+    for line in local_monitor_file:
+        local_file.write(line)
     local_file.close()
+    local_monitor_file.close()
+    local_broctl_file.close()
     time.sleep(1)
     if broctl_box == '':
-        print 'No suitable broctl box! Please install bro on a box with 4 or more physical cpu\'s!'
-        local_cleanup()
-        exit('1')
+        print '\033[91m'+'ERR >> No suitable broctl box! Please install broctl on a box that is capable of assigning 2 CPU cores' \
+              ' to each capture interface Or install broctl manually.'
 
     # move node.cfg
     ssh_connection.connect(broctl_box, 22, username, password)
@@ -936,11 +992,11 @@ def install_kafka(ip, username, password, partions, replicas, servers):
 
     formatted_zk_connect = ''
     formatted_broker_list = ''
-    for ip, num in servers.items():
-        formatted_broker_list += num+':'+ip+':9092, '
+    for sip, num in servers.items():
+        formatted_broker_list += num+':'+sip+':9092, '
     formatted_broker_list = formatted_broker_list[:-2]
-    for ip in servers:
-        formatted_zk_connect += ip+':2182, '
+    for sip in servers:
+        formatted_zk_connect += sip+':2182, '
     formatted_zk_connect = formatted_zk_connect[:-2]
 
     # consumer.properties are the same on each box
@@ -960,33 +1016,13 @@ def install_kafka(ip, username, password, partions, replicas, servers):
     print '/opt/kafka/config/consumer.properties configured...'
 
     # zookeeper.properties are the same on each box
-    local_file = open('/tmp/zookeeper.properties', 'w')
+
+    local_file = open('/tmp/producer.properties', 'w')
     local_file.write('metadata.broker.list='+formatted_broker_list+'\n'
                      'producer.type=sync\n'
                      'compression.codec=none'
                      'serializer.class=kafka.serializer.DefaultEncoder\n'
                      'zookeeper.connect="'+formatted_zk_connect+'"')
-    local_file.close()
-    time.sleep(1)
-    scp_connection.put('/tmp/zookeeper.properties', '/tmp/')
-    time.sleep(1)
-    stdin, stdout, stderr = ssh_connection.exec_command('sudo mv -f /tmp/zookeeper.properties /opt/kafka/config/',
-                                                        get_pty=True)
-    stdin.write(password+'\n')
-    stdin.flush()
-    time.sleep(1)
-    print '/opt/kafka/config/zookeeper.properties configured...'
-
-    # producer.properties are the same on each box
-    local_file = open('/tmp/producer.properties', 'w')
-    local_file.write('dataDir=/data/zookeeper\n'
-                     'clientPort=2181\n'
-                     'maxClientCnxns=0\n'
-                     'tickTime=2000\n'
-                     'initLimit=5\n'
-                     'syncLimit=2\n')
-    for ip, num in servers.items():
-        local_file.write('server.'+num+'='+ip+':2182:2183\n')
     local_file.close()
     time.sleep(1)
     scp_connection.put('/tmp/producer.properties', '/tmp/')
@@ -998,11 +1034,32 @@ def install_kafka(ip, username, password, partions, replicas, servers):
     time.sleep(1)
     print '/opt/kafka/config/producer.properties configured...'
 
+    # zookeeper.properties are the same on each box
+    local_file = open('/tmp/zookeeper.properties', 'w')
+    local_file.write('dataDir=/data/zookeeper\n'
+                     'clientPort=2181\n'
+                     'maxClientCnxns=0\n'
+                     'tickTime=2000\n'
+                     'initLimit=5\n'
+                     'syncLimit=2\n')
+    for sip, num in servers.items():
+        local_file.write('server.'+num+'='+sip+':2182:2183\n')
+    local_file.close()
+    time.sleep(1)
+    scp_connection.put('/tmp/zookeeper.properties', '/tmp/')
+    time.sleep(1)
+    stdin, stdout, stderr = ssh_connection.exec_command('sudo mv -f /tmp/zookeeper.properties /opt/kafka/config/',
+                                                        get_pty=True)
+    stdin.write(password+'\n')
+    stdin.flush()
+    time.sleep(1)
+    print '/opt/kafka/config/zookeeper.properties configured...'
+
     # server.properties is different on each box
     local_file = open('/tmp/server.properties', 'w')
     local_file.write('broker.id='+servers[ip]+'\n'
                      'port=9092\n'
-                     'advertised.host.name=172.16.0.125\n'
+                     'advertised.host.name='+ip+'\n'
                      'num.network.threads=3\n'
                      'num.io.threads=8\n'
                      'socket.send.buffer.bytes=102400\n'
@@ -1042,15 +1099,6 @@ def install_kafka(ip, username, password, partions, replicas, servers):
     stdin.flush()
     time.sleep(1)
     print '/data/zookeeper/my.id configured...'
-
-    # Create bro_raw topic
-    stdin, stdout, stderr = ssh_connection.exec_command('sudo /opt/kafka/bin/kafka-topics.sh --create --zookeeper '
-                                                        'localhost:2181 --replication-factor '+replicas+' '
-                                                        '--partitions '+partions+' --topic bro_raw', get_pty=True)
-    stdin.write(password+'\n')
-    stdin.flush()
-    time.sleep(1)
-    print 'Kafka Topic "bro_raw" created...'
 
     # Enabled zookeeper on boot
     stdin, stdout, stderr = ssh_connection.exec_command('sudo chkconfig zookeeper on', get_pty=True)
@@ -1375,6 +1423,8 @@ def local_cleanup():
     os.remove('/tmp/producer.properties')
     os.remove('/tmp/consumer.properties')
     os.remove('/tmp/my.id')
+    os.remove('/tmp/manager.cfg')
+    os.remove('/tmp/monitor.cfg')
 
     print 'Cleanup Complete. Exiting...'
 
@@ -1512,6 +1562,21 @@ def install_nginx(ip, username, password):
     stdin.write(password+'\n')
     stdin.flush()
     time.sleep(1)
+
+
+def start_kafka_cluster(ip, username, password, replicas, partions):
+    ssh_connection = paramiko.SSHClient()
+    ssh_connection.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh_connection.connect(ip, 22, username, password)
+    scp_connection = scp.SCPClient(ssh_connection.get_transport())
+        # Create bro_raw topic
+    stdin, stdout, stderr = ssh_connection.exec_command('sudo /opt/kafka/bin/kafka-topics.sh --create --zookeeper '
+                                                        'localhost:2181 --replication-factor '+replicas+' '
+                                                        '--partitions '+partions+' --topic bro_raw', get_pty=True)
+    stdin.write(password+'\n')
+    stdin.flush()
+    time.sleep(1)
+    print 'Kafka Topic "bro_raw" created...'
 
 
 connection_test(obtain_ip_list(), obtain_repo_box(), obtain_ssh_user())
