@@ -87,7 +87,7 @@ The **SSH USER** provided requires the ability to use the **SUDO command** as mo
 
 1. Bro local cluster (Utilizes only local CPU's and pf-ring to run bro)
 
-2. Bro Cluster (Utilizes local CPU's and Remote CPU's and pf-ring to run bro, _requires bro user that can ssh remotely to other bro machines-)
+2. Bro Cluster (Utilizes local CPU's and Remote CPU's and pf-ring to run bro, _requires bro user that can ssh remotely to other bro machines_)
 
 **ES NODES** will default to 40% of the nodes becoming Master/Data (MD) nodes, and the other 60% being Data (D) nodes only. It will always default to creating atleast 2 MD nodes so that splitbrain effects will be avoided.
 
