@@ -45,8 +45,7 @@ def connection_test(ip_list, repo_box, ssh_user):
             # if stderr is null move on, otherwise directory supplied is incorrect
             kibana_not_found = 1
             emerging_threats_not_found = 1
-            dirs = ['cyberdev-capes', 'dcode-cyberdev',
-                    'rhel-7-server-beta-rpms', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms',
+            dirs = ['epel', 'rhel-7-server-beta-rpms', 'rhel-7-server-optional-rpms', 'rhel-7-server-rpms',
                     'rhel-7-server-thirdparty-oracle-java-rpms']
 
             for line in stdout.read().splitlines():
@@ -748,7 +747,7 @@ def sensor_install(ip_list, username, password, kafka_ips, host_names):
         ssh_connection.connect(ip, 22, username, password)
         stdin, stdout, stderr = ssh_connection.exec_command('sudo yum -y install suricata bro broctl pfring dkms '
                                                             'pfring-dkms libpcap-pfring netsniff-ng '
-                                                            'bro-plugin-kafka-output critical-stack-smb-bro-plugin',
+                                                            'bro-plugin-kafka-output',
                                                             get_pty=True)
         stdin.write(password+'\n')
         stdin.flush()
@@ -1317,29 +1316,17 @@ def configure_repo_satellite(ip, username, password, repo_dir, repo_port):
                      'gpgcheck=0\n'
                      'baseurl=file://'+repo_dir+'rhel-7-server-thirdparty-oracle-java-rpms\n'
                      '\n'
-                     '[criticalstack-smb-local]\n'
-                     'name=criticalstack-smb-local\n'
+                     '[epel-local]\n'
+                     'name=epel-local\n'
                      'enabled=1\n'
                      'gpgcheck=0\n'
-                     'baseurl=file://'+repo_dir+'criticalstack-smb\n'
+                     'baseurl=file://'+repo_dir+'epel\n'
                      '\n'
-                     '[criticalstack-oracle-local]\n'
-                     'name=criticalstack-oracle-local\n'
+                     '[elastic-local]\n'
+                     'name=elastic-local\n'
                      'enabled=1\n'
                      'gpgcheck=0\n'
-                     'baseurl=file://'+repo_dir+'criticalstack-oracle\n'
-                     '\n'
-                     '[dcode-cyberdev-local]\n'
-                     'name=dcode-cyberdev-local\n'
-                     'enabled=1\n'
-                     'gpgcheck=0\n'
-                     'baseurl=file://'+repo_dir+'dcode-cyberdev\n'
-                     '\n'
-                     '[cyberdev-capes-local]\n'
-                     'name=cyberdev-capes-local\n'
-                     'enabled=1\n'
-                     'gpgcheck=0\n'
-                     'baseurl=file://'+repo_dir+'cyberdev-capes\n'
+                     'baseurl=file://'+repo_dir+'elastic\n'
                      '\n')
     local_file.close()
     time.sleep(1)
@@ -1506,30 +1493,18 @@ def configure_local_repos(ip_list, repo_ip, repo_port, username, password):
                      'gpgcheck=0\n'
                      'baseurl=http://'+repo_ip+':'+repo_port+'/rhel-7-server-thirdparty-oracle-java-rpms\n'
                      '\n'
-                     '[criticalstack-smb-local]\n'
-                     'name=criticalstack-smb-local\n'
+                     '[epel-local]\n'
+                     'name=epel-local\n'
                      'enabled=1\n'
                      'gpgcheck=0\n'
-                     'baseurl=http://'+repo_ip+':'+repo_port+'/criticalstack-smb\n'
+                     'baseurl=http://'+repo_ip+':'+repo_port+'/epel\n'
                      '\n'
-                     '[criticalstack-oracle-local]\n'
-                     'name=criticalstack-oracle-local\n'
+                     '[elastic-local]\n'
+                     'name=elastic-local\n'
                      'enabled=1\n'
                      'gpgcheck=0\n'
-                     'baseurl=http://'+repo_ip+':'+repo_port+'/criticalstack-oracle\n'
-                     '\n'
-                     '[dcode-cyberdev-local]\n'
-                     'name=dcode-cyberdev-local\n'
-                     'enabled=1\n'
-                     'gpgcheck=0\n'
-                     'baseurl=http://'+repo_ip+':'+repo_port+'/dcode-cyberdev\n'
-                     '\n'
-                     '[cyberdev-capes-local]\n'
-                     'name=cyberdev-capes-local\n'
-                     'enabled=1\n'
-                     'gpgcheck=0\n'
-                     'baseurl=http://'+repo_ip+':'+repo_port+'/cyberdev-capes\n'
-                     '\n')
+                     'baseurl=file://'+repo_ip+':'+repo_port+'/elastic\n'
+                     '\n'))
     local_file.close()
     time.sleep(1)
     ssh_connection = paramiko.SSHClient()
