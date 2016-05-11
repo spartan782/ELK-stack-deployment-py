@@ -1279,9 +1279,9 @@ def obtain_ssh_user():
     username = raw_input('Enter ssh username (Must have SUDO ability)\n')
     password = getpass.getpass('Enter ssh password')
     if username == '':
-        username = 'xadmin'
+        username = ''
     if password == '':
-        password = 'CYBERadmin1234!@#$'
+        password = ''
     return [username, password]
 
 
