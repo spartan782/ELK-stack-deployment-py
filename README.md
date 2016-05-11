@@ -45,13 +45,13 @@ It is intended for this script to be scaleable for any number of boxes to be add
 Current prereq's for this script are 2 python modules (paramiko, scp) and a local copy of the repo folder I have packaged up.
 This allows installations offline. This can be tricked into working for you as long as yum install <app> will succeed, if it fails then there is currently no error checking other than checking to verify the following folders exsit. 
 
-1. cyberdev-capes
-2. dcode-cyberdev
+1. epel-release
+2. rpmforge
 3. rhel-7-server-beta-rpms
 4. rhel-7-server-optional-rpms
 5. rhel-7-server-rpms
 6. rhel-7-server-thirdparty-oracle-java-rpms
-7. kibana*.tar
+7. kibana*.tar -> now also available in rpm formatt from elastic.co will update script.
 8. emerging\*tar\*
 
 These should all reside in the same dirrectory as the script will look only in the supplied directory for these files/folders. This will be consolidated into a single file at a later date.
@@ -104,14 +104,16 @@ Kakfa topic does not create properly
 
 ~~Kafka zookeeper.properties file being generated incorrectly~~
 
-Latancy creates issues with installation. --this is currently being delt with temporarily with sleep commands
+latency creates issues with installation. --this is currently being delt with temporarily with sleep commands
 
 
 ###Upcoming improvements
 
 Freeze the script to bypass prereq's listed above. 
-Redesign the script to improve performance and proficency using threading.
+--Redesign the script to improve performance and proficency using threading.--
+Redesign to use ansible. This should fix the latency problem with out building my own solution.
 Design ability to pivot from Kibana interface to PCAP.
+
 
 
 
